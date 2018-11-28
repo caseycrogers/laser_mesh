@@ -72,11 +72,15 @@ class Triangle(object):
             r.add_line(p2, p3)
             p4 = p3 + (w - 2 * self._offset) * right
             r.add_line(p3, p4)
-            p5 = p4 - self._height * down
+
+            # add material thickness to make triangles flush
+            p5 = p4 - (self._height + self._mat_thickness) * down
             r.add_line(p4, p5)
-            r.add_line(p2, p5, color=PERFORATED)
-            p6 = p5 + self._offset * right
-            r.add_line(p5, p6)
+            p6 = p5 - (w - 2 * self._offset) * right
+            r.add_line(p5, p6, PERFORATED)
+            r.add_line(p6, p2)
+            p7 = p5 + self._mat_thickness * down
+            r.add_line(p7, b)
 
             # add the tabs and cuts
             def build_tab_or_cut(c1):
@@ -123,7 +127,7 @@ class Triangle(object):
                 build_tab_or_cut(right_cut)
 
             # add the text label
-            center = (p2 + p3 + p4 + p5) / 4
+            center = midpoint(a, b) + self._height / 2.0 * down
             max_text_width = w - 2 * self._offset
             r.add_text(center, right, str(edge.index), max_text_width, self._text_height)
         r.render()

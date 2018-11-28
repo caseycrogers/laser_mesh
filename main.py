@@ -2,7 +2,9 @@ import os
 from stl import mesh
 from triangle import *
 from renderer import *
+from geometery_utils import length
 
+import numpy as np
 import argparse
 
 import sys
@@ -44,6 +46,11 @@ def main(mesh_file, output_name, debug):
                 curr_index += 1
         tris.append(tri)
 
+    edge_lengths = set()
+    [edge_lengths.update([length(v[0], v[1]), length(v[1], v[2]), length(v[2], v[0])]) for v in src_mesh.vectors]
+    print 'Outputting {0} triangles with a min edge of {1} and a max edge of {2}'.format(
+        len(src_mesh.vectors), min(edge_lengths), max(edge_lengths)
+    )
     for tri in tris:
         full_name = '{0}\\{1}-{2}'.format(output_name, output_name, tri.__str__())
         tri.render(full_name, renderer)
