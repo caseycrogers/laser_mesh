@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.text import TextPath
 from matplotlib.font_manager import FontProperties
-from matplotlib.font_manager import findSystemFonts
 from matplotlib import patches
 
 from geometery_utils import *
@@ -28,6 +27,7 @@ class _MatPlotLibRenderer:
     def __init__(self, name):
         plt.axes().set_aspect('equal')
         self._ax = plt.subplot(111)
+
         self.colors = set()
         self.name = name
 
@@ -41,7 +41,7 @@ class _MatPlotLibRenderer:
 
     def add_text(self, a, v, text, max_w, max_h, color=CUT):
         self.colors.add(color)
-        text_path = TextPath([0, 0], text, prop=FONT_PROPERTIES, color=self._convert_color(color))
+        text_path = TextPath([0, 0], text, prop=FONT_PROPERTIES)
         bb = text_path.get_extents()
         # center text on origin
         text_path = text_path.transformed(
@@ -58,7 +58,7 @@ class _MatPlotLibRenderer:
                 # move the center of the bounding box to a
                 .translate(a[0], a[1])
         )
-        self._ax.add_patch(patches.PathPatch(text_path, facecolor='none'))
+        self._ax.add_patch(patches.PathPatch(text_path, facecolor='none', edgecolor=self._convert_color(color)))
 
 
 class DXFRenderer(_MatPlotLibRenderer):
@@ -67,7 +67,15 @@ class DXFRenderer(_MatPlotLibRenderer):
 
     def render(self):
         plt.axis('off')
-        plt.savefig('{0}.svg'.format(self.name, format='svg'))
+        plt.margins(0, 0)
+        plt.gca().xaxis.set_major_locator(plt.NullLocator())
+        plt.gca().yaxis.set_major_locator(plt.NullLocator())
+        plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
+
+        x_bound = map(mm_to_inch, self._ax.get_xbound())
+        y_bound = map(mm_to_inch, self._ax.get_ybound())
+        plt.gcf().set_size_inches(x_bound[1] - x_bound[0], y_bound[1] - y_bound[0])
+        plt.gcf().savefig('{0}.svg'.format(self.name, format='svg'), bbox_inches='tight', pad_inches=0)
         plt.clf()
 
 
@@ -81,4 +89,5 @@ class DebugRenderer(_MatPlotLibRenderer):
             [Line2D([0], [0], color=self._convert_color(c), lw=4) for c in colors],
             descriptions
         )
+
         plt.show()

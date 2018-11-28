@@ -21,7 +21,7 @@ class Triangle(object):
         self._cut_offset = 1.5
 
         self._tab_snap = .5
-        self._tab_t = .2
+        self._t = .2
         self._tab_height = self._height - 2 * self._cut_offset
 
         self._min_text_width = 4.5
@@ -33,7 +33,8 @@ class Triangle(object):
 
     def __str__(self):
         return "_".join([str(e.index) for e in self.edges] +
-                        [str(int(e.length)) for e in self.edges])
+                        [str(int(e.length)) for e in self.edges] +
+                        ['m' if e.male else 'f' for e in self.edges])
 
     @property
     def points(self):
@@ -72,21 +73,27 @@ class Triangle(object):
 
             # add the tabs and cuts
             def build_tab_or_cut(c1):
-                c2 = c1 + self._cut*right
                 if edge.male:
+                    c2 = c1 + self._cut*right
                     r.add_line(c1, c2, color=PERFORATED)
                     # add tab on male piece
-                    c3 = c2 + self._tab_snap * right + self._tab_t * down
+                    c3 = c2 + self._tab_snap * right + self._t * down
                     r.add_line(c2, c3)
                     c4 = c2 - self._tab_snap * right + self._tab_height * down
                     r.add_line(c3, c4)
                     c5 = c4 - (self._cut - 2 * self._tab_snap) * right
                     r.add_line(c4, c5)
-                    c6 = c5 - 2*self._tab_snap*right - (self._tab_height - self._tab_t)*down
+                    c6 = c5 - 2 * self._tab_snap * right - (self._tab_height - self._t) * down
                     r.add_line(c5, c6)
                     r.add_line(c6, c1)
                 else:
+                    # widen cut by _t to ensure fit
+                    c2 = c1 + (self._cut + self._t) * right
+                    c1 = c1 - self._t*right
                     r.add_line(c1, c2)
+                    # thicken cut with more lines
+                    r.add_line(c1 + .1*down, c2 + .15*down)
+                    r.add_line(c1 - .1*down, c2 - .15*down)
             left_cut = a + (self._offset + self._cut_offset)*right + self._cut_offset*down
             build_tab_or_cut(left_cut)
             right_cut = b - (self._offset + self._cut_offset + self._cut)*right + self._cut_offset*down
