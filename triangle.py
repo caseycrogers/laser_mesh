@@ -15,16 +15,16 @@ class Triangle(object):
         self.transformation_matrix = np.linalg.solve(np.identity(3), basis_matrix)
 
         # key dimensions
-        self._mat_thickness = .87
+        self._mat_thickness = .25
 
-        self._height = 6
-        self._offset = 6
+        self._height = 7
+        self._offset = 7
 
-        self._cut = 5
+        self._cut = 7
         self._cut_offset = 1.5
 
         self._tab_snap = .5
-        self._t = .2
+        self._t = .1
         self._tab_height = self._height - 2 * self._cut_offset
 
         self._text_offset = .75
@@ -114,7 +114,7 @@ class Triangle(object):
                     r.add_line(c4, c1)
 
             if single_tab:
-                center_cut = (a + b) / 2 - (self._cut / 2) * right + self._cut_offset * down
+                center_cut = midpoint(a, b) - (self._cut / 2.0) * right + self._cut_offset * down
                 build_tab_or_cut(center_cut)
             else:
                 left_cut = a + (self._offset + self._cut_offset) * right + self._cut_offset * down

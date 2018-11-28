@@ -2,7 +2,7 @@ import numpy as np
 
 
 def midpoint(a, b):
-    return (a + b)/2
+    return (a + b) / 2.0
 
 
 def length(a, b):
