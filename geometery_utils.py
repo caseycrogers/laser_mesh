@@ -16,3 +16,7 @@ def normal(a, b):
 
 def normalized(v):
     return v/np.linalg.norm(v)
+
+
+def angle(v):
+    return np.arctan2(v[1], v[0])

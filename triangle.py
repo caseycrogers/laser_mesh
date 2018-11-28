@@ -24,10 +24,11 @@ class Triangle(object):
         self._tab_t = .2
         self._tab_height = self._height - 2 * self._cut_offset
 
-        self._text_width = 4.5
-        self._text_offset = .5
+        self._min_text_width = 4.5
+        self._text_offset = .75
+        self._text_height = self._height - 2*self._text_offset
 
-        self._min_width = 2 * (self._cut + self._cut_offset) + self._text_width
+        self._min_width = 2 * (self._cut + self._cut_offset) + self._min_text_width
         self._min_edge = 2 * self._offset + self._min_width
 
     def __str__(self):
@@ -54,14 +55,14 @@ class Triangle(object):
             a, b = self.transform(edge.point_a)[0:2], self.transform(edge.point_b)[0:2]
             right = normalized(b - a)
             down = normal(a, b)
-            l = length(a, b)
+            w = length(a, b)
 
             # add rectangular outline for tabs
             p1, p2 = a, a + self._offset*right
             r.add_line(p1, p2)
             p3 = p2 + self._height*down
             r.add_line(p2, p3)
-            p4 = p3 + (l - 2*self._offset)*right
+            p4 = p3 + (w - 2*self._offset)*right
             r.add_line(p3, p4)
             p5 = p4 - self._height*down
             r.add_line(p4, p5)
@@ -92,9 +93,9 @@ class Triangle(object):
             build_tab_or_cut(right_cut)
 
             # add the text label
-            bottom_left = a + (self._offset + self._cut_offset + self._cut)*right + \
-                (self._height - self._text_offset)*down
-            r.add_text(bottom_left, right, str(edge.index))
+            center = (p2 + p3 + p4 + p5)/4
+            max_text_width = w - 2*(self._offset + self._cut_offset + self._cut)
+            r.add_text(center, right, str(edge.index), max_text_width, self._text_height)
         r.render()
 
 
