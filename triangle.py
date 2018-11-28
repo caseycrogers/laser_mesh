@@ -8,14 +8,17 @@ class Triangle(object):
         self.edges = [edge_a, edge_b, edge_c]
 
         self.unit_norm = face_normal / np.linalg.norm(face_normal)
-        self.x_prime = (edge_a.point_b - edge_a.point_a)/np.linalg.norm(edge_a.point_b - edge_a.point_a)
+        self.x_prime = (edge_a.point_b - edge_a.point_a) / np.linalg.norm(edge_a.point_b - edge_a.point_a)
         self.y_prime = np.cross(self.unit_norm, self.x_prime)
 
         basis_matrix = np.row_stack((self.x_prime, self.y_prime, self.unit_norm))
         self.transformation_matrix = np.linalg.solve(np.identity(3), basis_matrix)
 
+        # key dimensions
+        self._mat_thickness = .87
+
         self._height = 6
-        self._offset = 2
+        self._offset = 6
 
         self._cut = 5
         self._cut_offset = 1.5
@@ -24,12 +27,11 @@ class Triangle(object):
         self._t = .2
         self._tab_height = self._height - 2 * self._cut_offset
 
-        self._min_text_width = 4.5
         self._text_offset = .75
-        self._text_height = self._height - 2*self._text_offset
+        self._text_height = self._height - 2 * self._text_offset
 
-        self._min_width = 2 * (self._cut + self._cut_offset) + self._min_text_width
-        self._min_edge = 2 * self._offset + self._min_width
+        self._min_double_tab_width = 2 * self._offset + 2 * self._cut + 3 * self._cut_offset
+        self._min_single_tab_width = 2 * self._offset + self._cut + 2 * self._cut_offset
 
     def __str__(self):
         return "_".join([str(e.index) for e in self.edges] +
@@ -43,7 +45,7 @@ class Triangle(object):
 
     @property
     def center_point(self):
-        return sum(self.points)/3
+        return sum(self.points) / 3
 
     def transform(self, point):
         ret = self.transformation_matrix.dot(point)
@@ -57,51 +59,72 @@ class Triangle(object):
             right = normalized(b - a)
             down = normal(a, b)
             w = length(a, b)
+            if w < self._min_single_tab_width:
+                print 'side with length {0} is shorter than minimum length {1}'.format(
+                    w, self._min_single_tab_width)
+            # true if this edge is too short for two tabs
+            single_tab = w < self._min_double_tab_width
 
             # add rectangular outline for tabs
-            p1, p2 = a, a + self._offset*right
+            p1, p2 = a, a + self._offset * right
             r.add_line(p1, p2)
-            p3 = p2 + self._height*down
+            p3 = p2 + self._height * down
             r.add_line(p2, p3)
-            p4 = p3 + (w - 2*self._offset)*right
+            p4 = p3 + (w - 2 * self._offset) * right
             r.add_line(p3, p4)
-            p5 = p4 - self._height*down
+            p5 = p4 - self._height * down
             r.add_line(p4, p5)
             r.add_line(p2, p5, color=PERFORATED)
-            p6 = p5 + self._offset*right
+            p6 = p5 + self._offset * right
             r.add_line(p5, p6)
 
             # add the tabs and cuts
             def build_tab_or_cut(c1):
                 if edge.male:
-                    c2 = c1 + self._cut*right
+                    c2 = c1 + self._cut * right
                     r.add_line(c1, c2, color=PERFORATED)
-                    # add tab on male piece
-                    c3 = c2 + self._tab_snap * right + self._t * down
+
+                    c3 = c2 + (2 * self._t + self._mat_thickness) * down
                     r.add_line(c2, c3)
-                    c4 = c2 - self._tab_snap * right + self._tab_height * down
+                    c4 = c3 + self._tab_snap * right
                     r.add_line(c3, c4)
-                    c5 = c4 - (self._cut - 2 * self._tab_snap) * right
+                    c5 = c2 - self._tab_snap * right + self._tab_height * down
                     r.add_line(c4, c5)
-                    c6 = c5 - 2 * self._tab_snap * right - (self._tab_height - self._t) * down
+                    c6 = c5 - (self._cut - 2 * self._tab_snap) * right
                     r.add_line(c5, c6)
-                    r.add_line(c6, c1)
+                    c7 = c6 - 2 * self._tab_snap * right - \
+                        (self._tab_height - 2 * self._t - self._mat_thickness) * down
+                    r.add_line(c6, c7)
+                    c8 = c7 + self._tab_snap * right
+                    r.add_line(c7, c8)
+                    c9 = c8 - (2 * self._t + self._mat_thickness) * down
+                    r.add_line(c8, c9)
+                    r.add_line(c9, c1)
                 else:
                     # widen cut by _t to ensure fit
-                    c2 = c1 + (self._cut + self._t) * right
-                    c1 = c1 - self._t*right
+                    cut_length = self._cut + self._t * 2
+                    cut_width = self._mat_thickness + self._t * 2
+                    c1 = c1 - self._t * right - self._t * down
+                    c2 = c1 + cut_length * right
                     r.add_line(c1, c2)
-                    # thicken cut with more lines
-                    r.add_line(c1 + .1*down, c2 + .15*down)
-                    r.add_line(c1 - .1*down, c2 - .15*down)
-            left_cut = a + (self._offset + self._cut_offset)*right + self._cut_offset*down
-            build_tab_or_cut(left_cut)
-            right_cut = b - (self._offset + self._cut_offset + self._cut)*right + self._cut_offset*down
-            build_tab_or_cut(right_cut)
+                    c3 = c2 + cut_width * down
+                    r.add_line(c3, c2)
+                    c4 = c3 - cut_length * right
+                    r.add_line(c3, c4)
+                    r.add_line(c4, c1)
+
+            if single_tab:
+                center_cut = (a + b) / 2 - (self._cut / 2) * right + self._cut_offset * down
+                build_tab_or_cut(center_cut)
+            else:
+                left_cut = a + (self._offset + self._cut_offset) * right + self._cut_offset * down
+                build_tab_or_cut(left_cut)
+                right_cut = b - (self._offset + self._cut_offset + self._cut) * right + self._cut_offset * down
+                build_tab_or_cut(right_cut)
 
             # add the text label
-            center = (p2 + p3 + p4 + p5)/4
-            max_text_width = w - 2*(self._offset + self._cut_offset + self._cut)
+            center = (p2 + p3 + p4 + p5) / 4
+            max_text_width = w - 2 * self._offset
             r.add_text(center, right, str(edge.index), max_text_width, self._text_height)
         r.render()
 

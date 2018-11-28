@@ -19,7 +19,9 @@ class Color:
 
 CUT = Color(255, 0, 255, "CUT")
 PERFORATED = Color(0, 255, 255, "PERFORATE")
+ENGRAVE = Color(255, 255, 0, "ENGRAVE")
 DEBUG = Color(0, 0, 0, "DEBUG")
+
 FONT_PROPERTIES = FontProperties(family="Inconsolata-Regular", size=6)
 
 
@@ -39,7 +41,7 @@ class _MatPlotLibRenderer:
         self.colors.add(color)
         self._ax.plot([a[0], b[0]], [a[1], b[1]], color=self._convert_color(color))
 
-    def add_text(self, a, v, text, max_w, max_h, color=CUT):
+    def add_text(self, a, v, text, max_w, max_h, color=ENGRAVE):
         self.colors.add(color)
         text_path = TextPath([0, 0], text, prop=FONT_PROPERTIES)
         bb = text_path.get_extents()
