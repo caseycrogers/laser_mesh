@@ -59,7 +59,6 @@ def main(mesh_file, output_name, debug):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Convert a mesh into cuttable triangles.')
     parser.add_argument('mesh_file', help='Relative path to the input .stl')
-    parser.add_argument('output', help='Name for the output path/file names')
     parser.add_argument('--debug', action='store_true', help='Only render in matplotlib.')
     args = parser.parse_args()
-    main(args.mesh_file, args.output, args.debug)
+    main(args.mesh_file, args.mesh_file.split("\\")[-1].split(".")[0], args.debug)
