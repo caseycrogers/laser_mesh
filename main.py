@@ -3,8 +3,8 @@ from stl import mesh
 from triangle import *
 from renderer import *
 from geometery_utils import length
+from rectpack import PackingMode, PackingBin, newPacker, float2dec
 
-import numpy as np
 import argparse
 
 import sys
@@ -51,9 +51,35 @@ def main(mesh_file, output_name, debug):
     print 'Outputting {0} triangles with a min edge of {1} and a max edge of {2}'.format(
         len(src_mesh.vectors), min(edge_lengths), max(edge_lengths)
     )
+
+    packer = newPacker(mode=PackingMode.Offline,
+                       bin_algo=PackingBin.BFF,
+                       rotation=False)
+    rid_to_packing_box = {}
+    i = 0
     for tri in tris:
-        full_name = '{0}\\{1}-{2}'.format(output_name, output_name, tri.__str__())
-        tri.render(full_name, renderer)
+        r = PackingBoxRenderer()
+        r.add_triangle(tri)
+        box = r.finish('')
+        rid_to_packing_box[i] = box
+        packer.add_rect(*box.rect, rid=i)
+        i += 1
+    packer.add_bin(float2dec(Config.bed_width, 2), float2dec(Config.bed_height, 2), count=float('inf'))
+    packer.pack()
+
+    for b in packer:
+        r = renderer(axis_range=np.array([Config.bed_width, Config.bed_height]))
+        min_edge_index = float('inf')
+        max_edge_index = float('-inf')
+        for rect in b:
+            orig_box = rid_to_packing_box[rect.rid]
+            delta = np.array([float(rect.x), float(rect.y)]) - orig_box.bottom_left
+            r.add_triangle(orig_box.triangle, translation=delta)
+            r.update()
+
+            min_edge_index = min(min_edge_index, *[e.index for e in orig_box.triangle.edges])
+            max_edge_index = max(max_edge_index, *[e.index for e in orig_box.triangle.edges])
+        r.finish('{0}/{0}-bed_{1}_{2}'.format(output_name, min_edge_index, max_edge_index))
 
 
 if __name__ == "__main__":
