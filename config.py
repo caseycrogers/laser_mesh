@@ -1,13 +1,13 @@
 class Config(object):
-    bed_width = 279.4
-    bed_height = 215.9
+    bed_width = 279.4  # 8.5x11 cardstock
+    bed_height = 200
 
-    cut_padding = 2
+    padding = 2
 
     mat_thickness = .25
 
     height = 7
-    offset = 7
+    offset = .1
 
     cut = 7
     cut_offset = 1.5

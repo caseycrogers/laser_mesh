@@ -23,6 +23,7 @@ class Color:
 CUT = Color(255, 0, 255, "CUT")
 PERFORATED = Color(0, 255, 255, "PERFORATE")
 ENGRAVE = Color(255, 255, 0, "ENGRAVE")
+FRAME = Color(128, 128, 128, "FRAME")
 DEBUG = Color(0, 0, 0, "DEBUG")
 
 FONT_PROPERTIES = FontProperties(family="Inconsolata-Regular", size=6)
@@ -218,7 +219,7 @@ class PackingBoxRenderer(_MatPlotLibRenderer):
 
     def finish(self, name):
         return PackingBox(self._triangle,
-                          self._x_min - Config.cut_padding,
-                          self._x_max + Config.cut_padding,
-                          self._y_min - Config.cut_padding,
-                          self._y_max + Config.cut_padding)
+                          self._x_min - Config.padding,
+                          self._x_max + Config.padding,
+                          self._y_min - Config.padding,
+                          self._y_max + Config.padding)
