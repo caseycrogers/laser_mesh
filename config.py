@@ -6,10 +6,10 @@ class Config(object):
 
     mat_thickness = .25
 
-    height = 7
+    height = 6
     min_offset = height
 
-    cut = 7
+    cut = 6
     cut_offset = 1.5
 
     tab_snap = .5

@@ -72,14 +72,14 @@ class _MatPlotLibRenderer:
             a = triangle.flatten_point(edge.point_a)[0:2] + translation
             b = triangle.flatten_point(edge.point_b)[0:2] + translation
             mid = midpoint(a, b)
-            w = distance(a, b)
+            width = distance(a, b)
 
             cs = CoordinateSystem2D(normalized(b - a), normal(b, a))
             up, down, left, right, mirrored = cs.up, cs.down, cs.left, cs.right, lambda p: cs.mirror_x(p, mid)
 
-            if w < Config.min_edge_width:
+            if width < Config.min_edge_width:
                 print 'side with length {0} is shorter than minimum length {1}'.format(
-                    w, Config.min_edge_width)
+                    width, Config.min_edge_width)
 
             def add_snap(snap_point):
 
@@ -96,7 +96,7 @@ class _MatPlotLibRenderer:
                     self.add_line(t2, t3)
                     self.add_line(tab_mirror(t2), tab_mirror(t3))
                     t4 = t3 + down(Config.tab_height - Config.mat_thickness - 2 * Config.t) + \
-                         right(2 * Config.tab_snap)
+                        right(2 * Config.tab_snap)
                     self.add_line(t3, t4)
                     self.add_line(tab_mirror(t3), tab_mirror(t4))
                 else:
@@ -114,14 +114,22 @@ class _MatPlotLibRenderer:
             third = distance(a, b)/3
             if third > 2 * Config.cut + 3 * Config.cut_offset:
                 offset = third
-                snap_point = offset + right(Config.cut_offset + Config.cut / 2.0) + \
+                snap_point = a + right(offset + Config.cut_offset + Config.cut / 2.0) + \
                     down(Config.cut_offset - Config.mat_thickness)
                 add_snap(snap_point)
                 add_snap(mirrored(snap_point))
             else:
-                offset = Config.min_offset
+                min_width_for_snap = 2 * Config.cut_offset + Config.cut
                 snap_point = mid + down(Config.cut_offset - Config.mat_thickness)
-                add_snap(snap_point)
+                if third > min_width_for_snap and third > min_width_for_snap:
+                    offset = third
+                    add_snap(snap_point)
+                elif width - 2 * Config.min_offset > min_width_for_snap:
+                    offset = Config.min_offset
+                    add_snap(snap_point)
+                else:
+                    # Don't add a snap, not enough space
+                    offset = width - Config.min_offset
 
             p1 = a + right(offset)
             self.add_line(a, p1)
@@ -132,7 +140,7 @@ class _MatPlotLibRenderer:
             p2 = p1_a + cs.down(Config.height)
             self.add_line(p1_a, p2)
             self.add_line(mirrored(p1_a), mirrored(p2))
-            p3 = p2 + right(w / 2.0 - offset)
+            p3 = p2 + right(width / 2.0 - offset)
             self.add_line(p2, p3)
             self.add_line(mirrored(p2), mirrored(p3))
 
