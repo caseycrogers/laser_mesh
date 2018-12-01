@@ -26,8 +26,6 @@ ENGRAVE = Color(255, 255, 0, "ENGRAVE")
 FRAME = Color(128, 128, 128, "FRAME")
 DEBUG = Color(0, 0, 0, "DEBUG")
 
-FONT_PROPERTIES = FontProperties(family="Inconsolata-Regular", size=6)
-
 
 class _MatPlotLibRenderer:
     def __init__(self, axis_range=None):
@@ -49,7 +47,7 @@ class _MatPlotLibRenderer:
 
     def add_text(self, a, v, text, max_w, max_h, color=ENGRAVE):
         self._colors.add(color)
-        text_path = TextPath([0, 0], text, prop=FONT_PROPERTIES)
+        text_path = TextPath([0, 0], text)
         bb = text_path.get_extents()
         # center text on origin
         text_path = text_path.transformed(
@@ -73,80 +71,75 @@ class _MatPlotLibRenderer:
             # convert to 2D coordinate space
             a = triangle.flatten_point(edge.point_a)[0:2] + translation
             b = triangle.flatten_point(edge.point_b)[0:2] + translation
-            right = normalized(b - a)
-            down = normal(a, b)
-            w = length(a, b)
-            if w < Config.min_single_tab_width:
+            mid = midpoint(a, b)
+            w = distance(a, b)
+
+            cs = CoordinateSystem2D(normalized(b - a), normal(b, a))
+            up, down, left, right, mirrored = cs.up, cs.down, cs.left, cs.right, lambda p: cs.mirror_x(p, mid)
+
+            if w < Config.min_edge_width:
                 print 'side with length {0} is shorter than minimum length {1}'.format(
-                    w, Config.min_single_tab_width)
-            # true if this edge is too short for two tabs
-            single_tab = w < Config.min_double_tab_width
+                    w, Config.min_edge_width)
 
-            # add rectangular outline for tabs
-            p1, p2 = a, a + Config.offset * right
-            self.add_line(p1, p2)
-            p3 = p2 + Config.height * down
-            self.add_line(p2, p3)
-            p4 = p3 + (w - 2 * Config.offset) * right
-            self.add_line(p3, p4)
+            def add_snap(snap_point):
 
-            # add material thickness to make triangles flush
-            p5 = p4 - (Config.height + Config.mat_thickness) * down
-            self.add_line(p4, p5)
-            p6 = p5 - (w - 2 * Config.offset) * right
-            self.add_line(p5, p6, PERFORATED)
-            self.add_line(p6, p2)
-            p7 = p5 + Config.mat_thickness * down
-            self.add_line(p7, b)
-
-            # add the tabs and cuts
-            def build_tab_or_cut(c1):
+                def tab_mirror(p):
+                    return cs.mirror_x(p, snap_point)
                 if edge.male:
-                    c2 = c1 + Config.cut * right
-                    self.add_line(c1, c2, color=PERFORATED)
-
-                    c3 = c2 + (2 * Config.t + Config.mat_thickness) * down
-                    self.add_line(c2, c3)
-                    c4 = c3 + Config.tab_snap * right
-                    self.add_line(c3, c4)
-                    c5 = c2 - Config.tab_snap * right + Config.tab_height * down
-                    self.add_line(c4, c5)
-                    c6 = c5 - (Config.cut - 2 * Config.tab_snap) * right
-                    self.add_line(c5, c6)
-                    c7 = c6 - 2 * Config.tab_snap * right - \
-                         (Config.tab_height - 2 * Config.t - Config.mat_thickness) * down
-                    self.add_line(c6, c7)
-                    c8 = c7 + Config.tab_snap * right
-                    self.add_line(c7, c8)
-                    c9 = c8 - (2 * Config.t + Config.mat_thickness) * down
-                    self.add_line(c8, c9)
-                    self.add_line(c9, c1)
+                    t1 = snap_point + left(Config.cut / 2.0)
+                    self.add_line(snap_point, t1, color=PERFORATED)
+                    self.add_line(mirrored(snap_point), mirrored(t1), color=PERFORATED)
+                    t2 = t1 + down(2 * Config.t + Config.mat_thickness)
+                    self.add_line(t1, t2)
+                    self.add_line(tab_mirror(t1), tab_mirror(t2))
+                    t3 = t2 + left(Config.tab_snap)
+                    self.add_line(t2, t3)
+                    self.add_line(tab_mirror(t2), tab_mirror(t3))
+                    t4 = t3 + down(Config.tab_height - Config.mat_thickness - 2 * Config.t) + \
+                         right(2 * Config.tab_snap)
+                    self.add_line(t3, t4)
+                    self.add_line(tab_mirror(t3), tab_mirror(t4))
                 else:
-                    # widen cut by _t to ensure fit
-                    cut_length = Config.cut + Config.t * 2
-                    cut_width = Config.mat_thickness + Config.t * 2
-                    c1 = c1 - Config.t * right - Config.t * down
-                    c2 = c1 + cut_length * right
-                    self.add_line(c1, c2)
-                    c3 = c2 + cut_width * down
-                    self.add_line(c3, c2)
-                    c4 = c3 - cut_length * right
-                    self.add_line(c3, c4)
-                    self.add_line(c4, c1)
+                    w = Config.cut + 2 * Config.t
+                    h = Config.mat_thickness + 2 * Config.t
+                    t1 = snap_point + left(w / 2.0) + up(h / 2.0)
+                    t2 = t1 + down(h)
+                    self.add_line(t1, t2)
+                    t3 = t2 + right(w)
+                    self.add_line(t2, t3)
+                    t4 = t3 + up(h)
+                    self.add_line(t3, t4)
+                    self.add_line(t4, t1)
 
-            if single_tab:
-                center_cut = midpoint(a, b) - (Config.cut / 2.0) * right + Config.cut_offset * down
-                build_tab_or_cut(center_cut)
+            third = distance(a, b)/3
+            if third > 2 * Config.cut + 3 * Config.cut_offset:
+                offset = third
+                snap_point = offset + right(Config.cut_offset + Config.cut / 2.0) + \
+                    down(Config.cut_offset - Config.mat_thickness)
+                add_snap(snap_point)
+                add_snap(mirrored(snap_point))
             else:
-                left_cut = a + (Config.offset + Config.cut_offset) * right + Config.cut_offset * down
-                build_tab_or_cut(left_cut)
-                right_cut = b - (Config.offset + Config.cut_offset + Config.cut) * right + Config.cut_offset * down
-                build_tab_or_cut(right_cut)
+                offset = Config.min_offset
+                snap_point = mid + down(Config.cut_offset - Config.mat_thickness)
+                add_snap(snap_point)
+
+            p1 = a + right(offset)
+            self.add_line(a, p1)
+            self.add_line(mirrored(a), mirrored(p1))
+            # shift up by material thickness to make triangles flush
+            p1_a = p1 + cs.up(Config.mat_thickness)
+            self.add_line(p1_a, mirrored(p1_a), color=PERFORATED)
+            p2 = p1_a + cs.down(Config.height)
+            self.add_line(p1_a, p2)
+            self.add_line(mirrored(p1_a), mirrored(p2))
+            p3 = p2 + right(w / 2.0 - offset)
+            self.add_line(p2, p3)
+            self.add_line(mirrored(p2), mirrored(p3))
 
             # add the text label
-            center = midpoint(a, b) + Config.height / 2.0 * down
-            max_text_width = w - 2 * Config.offset
-            self.add_text(center, right, str(edge.index), max_text_width, Config.text_height)
+            center = midpoint(a, b) + cs.down(Config.height / 2.0)
+            max_text_width = distance(p1_a, mirrored(p1_a))
+            self.add_text(center, b - a, str(edge.index), max_text_width, Config.text_height)
 
 
 class DXFRenderer(_MatPlotLibRenderer):
@@ -166,7 +159,7 @@ class DXFRenderer(_MatPlotLibRenderer):
             x_bound = map(mm_to_inch, self._ax.get_xbound())
             y_bound = map(mm_to_inch, self._ax.get_ybound())
             plt.gcf().set_size_inches(x_bound[1] - x_bound[0], y_bound[1] - y_bound[0])
-        plt.gcf().savefig('{0}.svg'.format(name, format='svg'), bbox_inches='tight', pad_inches=0)
+        plt.gcf().savefig('{0}.svg'.format(name, format='svg'), bbox_inches=0, pad_inches=0, transparent=True)
         plt.clf()
 
 

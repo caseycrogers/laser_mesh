@@ -7,17 +7,16 @@ class Config(object):
     mat_thickness = .25
 
     height = 7
-    offset = .1
+    min_offset = height
 
     cut = 7
     cut_offset = 1.5
 
     tab_snap = .5
     t = .1
-    tab_height = height - 2 * cut_offset
+    tab_height = height - cut_offset
 
     text_offset = .75
     text_height = height - 2 * text_offset
 
-    min_double_tab_width = 2 * offset + 2 * cut + 3 * cut_offset
-    min_single_tab_width = 2 * offset + cut + 2 * cut_offset
+    min_edge_width = 2 * min_offset + cut + 2 * cut_offset
