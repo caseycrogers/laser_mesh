@@ -1,8 +1,10 @@
 from geometery_utils import *
 
+
 class Triangle(object):
     def __init__(self, face_normal, edge_a, edge_b, edge_c):
         self.edges = [edge_a, edge_b, edge_c]
+        self.adj_unit_norms = []
 
         self.unit_norm = face_normal / np.linalg.norm(face_normal)
         self.x_prime = (edge_a.point_b - edge_a.point_a) / np.linalg.norm(edge_a.point_b - edge_a.point_a)
@@ -27,10 +29,16 @@ class Triangle(object):
 
 
 class Edge:
+    open = 0
+    male = 1
+    female = 2
+
     def __init__(self, point_a, point_b):
         self.points = [point_a, point_b]
+        self._angle = None
         self.index = None
-        self.male = True
+        self._adj_face_normal = None
+        self._edge_type = Edge.open
 
     def __eq__(self, other):
         if type(self) != type(other):
@@ -41,8 +49,34 @@ class Edge:
             return True
 
     def indexable(self):
-        # convert to a frozenset of tuples for dictionary indexing
+        # Convert to a frozenset of tuples for dictionary indexing
         return frozenset((tuple(self.point_a), tuple(self.point_b)))
+
+    def set_type(self, edge_type):
+        self._edge_type = edge_type
+
+    def set_angle(self, edge_angle):
+        self._angle = edge_angle
+
+    @property
+    def get_angle(self):
+        return self._angle
+
+    @property
+    def is_open(self):
+        return self._edge_type == Edge.open
+
+    @property
+    def is_concave(self):
+        return not self.is_open and self._angle > np.pi
+
+    @property
+    def is_male(self):
+        return self._edge_type == Edge.male
+
+    @property
+    def is_female(self):
+        return self._edge_type == Edge.female
 
     @property
     def point_a(self):

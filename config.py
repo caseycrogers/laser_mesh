@@ -1,22 +1,16 @@
 class Config(object):
-    bed_width = 279.4  # 8.5x11 cardstock
+    bed_width = 279.4  # Definitely not right?
     bed_height = 200
 
     padding = 2
 
-    mat_thickness = .25
-
-    height = 6
-    min_offset = height
-
-    cut = 6
-    cut_offset = 1.5
-
-    tab_snap = .5
+    mat_thickness = 6.35  # quarter inch ply
     t = .1
-    tab_height = height - cut_offset
+
+    offset = mat_thickness/2.0
 
     text_offset = .75
-    text_height = height - 2 * text_offset
+    text_height = mat_thickness - 2 * text_offset
 
-    min_edge_width = 2 * min_offset + cut + 2 * cut_offset
+    min_edge_width = offset*2 + mat_thickness
+

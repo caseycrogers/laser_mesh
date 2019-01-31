@@ -2,7 +2,6 @@ from matplotlib import transforms
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.text import TextPath
-from matplotlib.font_manager import FontProperties
 from matplotlib import patches
 from config import Config
 import sys
@@ -45,23 +44,27 @@ class _MatPlotLibRenderer:
         self._colors.add(color)
         self._ax.plot([a[0], b[0]], [a[1], b[1]], color=self._convert_color(color))
 
-    def add_text(self, a, v, text, max_w, max_h, color=ENGRAVE):
+    def add_text(self, a, v, text, max_w, max_h, color=ENGRAVE, h_center=False, v_center=False):
         self._colors.add(color)
         text_path = TextPath([0, 0], text)
         bb = text_path.get_extents()
-        # center text on origin
+        h_adjust, v_adjust = 0, 0
+        if h_center:
+            h_adjust = -(bb.xmin + bb.xmax) / 2
+        if v_center:
+            v_adjust = -(bb.ymin + bb.ymax) / 2
         text_path = text_path.transformed(
-            transforms.Affine2D().translate(-(bb.xmin + bb.xmax) / 2, -(bb.ymin + bb.ymax) / 2)
+            transforms.Affine2D().translate(h_adjust, v_adjust)
         )
         x_scale = max_w / (bb.xmax - bb.xmin)
         y_scale = max_h / (bb.ymax - bb.ymin)
         text_path = text_path.transformed(
             transforms.Affine2D()
                 # align text with the respective side
-                .rotate(angle(v))
+                .rotate(vector_angle_2d(v))
                 # make text as large as will fit in x and y bounds
                 .scale(min(x_scale, y_scale))
-                # move the center of the bounding box to a
+                # move the text to the text point
                 .translate(a[0], a[1])
         )
         self._ax.add_patch(patches.PathPatch(text_path, facecolor='none', edgecolor=self._convert_color(color)))
@@ -75,79 +78,67 @@ class _MatPlotLibRenderer:
             width = distance(a, b)
 
             cs = CoordinateSystem2D(normalized(b - a), normal(b, a))
-            up, down, left, right, mirrored = cs.up, cs.down, cs.left, cs.right, lambda p: cs.mirror_x(p, mid)
+            mirrored = lambda p: cs.mirror_x(p, mid)
 
-            if width < Config.min_edge_width:
-                print 'side with length {0} is shorter than minimum length {1}'.format(
-                    width, Config.min_edge_width)
+            def render_edge():
+                p1 = a
+                p2 = mid + cs.left(Config.mat_thickness / 2.0)
+                self.add_line(p1, p2)
+                p3 = p2 + cs.up(Config.mat_thickness / 2.0)
+                self.add_line(p2, p3)
+                p4 = p3 + cs.right(Config.mat_thickness)
+                self.add_line(p3, p4)
+                p5 = p4 + cs.down(Config.mat_thickness / 2.0)
+                self.add_line(p4, p5)
+                p6 = b
+                self.add_line(p5, p6)
 
-            def add_snap(snap_point):
+            def render_text():
+                text_point = mid + cs.right(Config.mat_thickness / 2.0 + Config.text_offset) + \
+                             cs.up(Config.text_offset)
+                self.add_text(text_point, b - a,
+                              str(edge.index) + ('c' if edge.is_concave else ''),
+                              distance(b, text_point) - Config.mat_thickness, Config.text_height)
 
-                def tab_mirror(p):
-                    return cs.mirror_x(p, snap_point)
-                if edge.male:
-                    t1 = snap_point + left(Config.cut / 2.0)
-                    self.add_line(snap_point, t1, color=PERFORATED)
-                    self.add_line(mirrored(snap_point), mirrored(t1), color=PERFORATED)
-                    t2 = t1 + down(2 * Config.t + Config.mat_thickness)
-                    self.add_line(t1, t2)
-                    self.add_line(tab_mirror(t1), tab_mirror(t2))
-                    t3 = t2 + left(Config.tab_snap)
-                    self.add_line(t2, t3)
-                    self.add_line(tab_mirror(t2), tab_mirror(t3))
-                    t4 = t3 + down(Config.tab_height - Config.mat_thickness - 2 * Config.t) + \
-                        right(2 * Config.tab_snap)
-                    self.add_line(t3, t4)
-                    self.add_line(tab_mirror(t3), tab_mirror(t4))
-                else:
-                    w = Config.cut + 2 * Config.t
-                    h = Config.mat_thickness + 2 * Config.t
-                    t1 = snap_point + left(w / 2.0) + up(h / 2.0)
-                    t2 = t1 + down(h)
-                    self.add_line(t1, t2)
-                    t3 = t2 + right(w)
-                    self.add_line(t2, t3)
-                    t4 = t3 + up(h)
-                    self.add_line(t3, t4)
-                    self.add_line(t4, t1)
+            def render_joint(joint_point):
+                # reduce angles from 0 - 360 to 0 - 180 for simplicity
+                joint_angle = edge.get_angle if not edge.is_concave else edge.get_angle - np.pi
+                joint_width = Config.mat_thickness
+                joint_depth = Config.mat_thickness / 2.0
 
-            third = distance(a, b)/3
-            if third > 2 * Config.cut + 3 * Config.cut_offset:
-                offset = third
-                snap_point = a + right(offset + Config.cut_offset + Config.cut / 2.0) + \
-                    down(Config.cut_offset - Config.mat_thickness)
-                add_snap(snap_point)
-                add_snap(mirrored(snap_point))
+                rot_cs = cs.rotated_copy(np.pi / 2.0 - joint_angle)
+                long_edge = joint_depth + joint_width / np.tan(joint_angle / 2.0)
+
+                p1 = joint_point
+                p2 = p1 + cs.down(long_edge)
+                self.add_line(p1, p2)
+
+                p3 = p2 + rot_cs.right(long_edge)
+                self.add_line(p2, p3)
+                p4 = p3 + rot_cs.up(joint_width)
+                self.add_line(p3, p4)
+                p5 = p4 + rot_cs.left(joint_depth)
+                self.add_line(p4, p5)
+
+                p6 = p5 + cs.up(joint_depth)
+                self.add_line(p5, p6)
+                p7 = p1
+                self.add_line(p6, p7)
+                self.add_text(p5, p2 - p5, str(edge.index), distance(p2, p5) - Config.text_offset, Config.text_height,
+                              v_center=True)
+
+            if edge.is_open:
+                # Don't add anything to an open edge
+                self.add_line(a, b)
             else:
-                min_width_for_snap = 2 * Config.cut_offset + Config.cut
-                snap_point = mid + down(Config.cut_offset - Config.mat_thickness)
-                if third > min_width_for_snap and third > min_width_for_snap:
-                    offset = third
-                    add_snap(snap_point)
-                elif width - 2 * Config.min_offset > min_width_for_snap:
-                    offset = Config.min_offset
-                    add_snap(snap_point)
-                else:
-                    # Don't add a snap, not enough space
-                    offset = width - Config.min_offset
+                if edge.is_male:
+                    render_joint(midpoint(a, b) + cs.left(Config.mat_thickness / 2.0))
+                render_edge()
+                render_text()
 
-            p1 = a + right(offset)
-            self.add_line(a, p1)
-            self.add_line(mirrored(a), mirrored(p1))
-            # shift up by material thickness to make triangles flush
-            p1_a = p1 + cs.up(Config.mat_thickness)
-            self.add_line(p1_a, mirrored(p1_a), color=PERFORATED)
-            p2 = p1_a + cs.down(Config.height)
-            self.add_line(p1_a, p2)
-            self.add_line(mirrored(p1_a), mirrored(p2))
-            p3 = p2 + right(width / 2.0 - offset)
-            self.add_line(p2, p3)
-            self.add_line(mirrored(p2), mirrored(p3))
-
-            # add the text label
-            center = midpoint(a, b) + cs.down(Config.height / 2.0)
-            max_text_width = distance(p1_a, mirrored(p1_a))
-            self.add_text(center, b - a, str(edge.index), max_text_width, Config.text_height)
+                if width < Config.min_edge_width:
+                    print 'side with length {0} is shorter than minimum length {1}'.format(
+                        width, Config.min_edge_width)
 
 
 class DXFRenderer(_MatPlotLibRenderer):
@@ -204,7 +195,7 @@ class PackingBoxRenderer(_MatPlotLibRenderer):
         assert self._triangle is None, 'PackingBoxRenderer should only ever be called with one triangle.'
         self._triangle = triangle
 
-    def add_line(self, a, b, color=CUT):
+    def add_line(self, a, b, color=CUT, left_tab=False, right_tab=False):
         for x in (a[0], b[0]):
             self._x_min = min(self._x_min, x)
             self._x_max = max(self._x_max, x)
@@ -212,7 +203,7 @@ class PackingBoxRenderer(_MatPlotLibRenderer):
             self._y_min = min(self._y_min, y)
             self._y_max = max(self._y_max, y)
 
-    def add_text(self, a, v, text, max_w, max_h, color=ENGRAVE):
+    def add_text(self, a, v, text, max_w, max_h, color=ENGRAVE, h_center=True, v_center=True):
         pass
 
     def update(self):

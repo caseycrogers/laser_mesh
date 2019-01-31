@@ -24,7 +24,8 @@ def main(mesh_file, output_name, debug, individual):
     src_mesh = mesh.Mesh.from_file(mesh_file)
 
     tris = []
-    edge_to_index = {}
+    edge_to_edge_mate = {}
+    edge_to_tri_mate = {}
     curr_index = 0
 
     for face, face_normal in zip(src_mesh.vectors, src_mesh.normals):
@@ -37,14 +38,31 @@ def main(mesh_file, output_name, debug, individual):
         )
         for edge in tri.edges:
             try:
-                # match the edge index to the index of it's edge mate
-                edge.index = edge_to_index[edge.indexable()]
-            except KeyError:
-                # edge has not already been visited, set new index and make female
-                edge_to_index[edge.indexable()] = curr_index
+                # find the edge mate if present
                 edge.index = curr_index
-                edge.male = False
+                edge_mate = edge_to_edge_mate[edge.indexable()]
+                tri_mate = edge_to_tri_mate[edge.indexable()]
+
+                # Find the two vertices not shared by the triangles, needed to help determine concavity
+                third_vert = [p for p in tri.points
+                              if not point_equals(p, edge.point_a)
+                              and not point_equals(p, edge.point_b)][0]
+                third_vert_mate = [p for p in tri_mate.points
+                                   if not point_equals(p, edge.point_a)
+                                   and not point_equals(p, edge.point_b)][0]
+                edge_angle = angle_between_faces(third_vert, third_vert_mate, tri.unit_norm, tri_mate.unit_norm)
+
+                edge.set_type(Edge.male)
+                edge.set_angle(edge_angle)
+
+                edge_mate.set_type(Edge.female)
+                edge_mate.set_angle(edge_angle)
+                edge_mate.index = curr_index
                 curr_index += 1
+            except KeyError:
+                # edge has not already been visited, add it to the dictionaries
+                edge_to_edge_mate[edge.indexable()] = edge
+                edge_to_tri_mate[edge.indexable()] = tri
         tris.append(tri)
 
     edge_lengths = set()
@@ -85,7 +103,6 @@ def main(mesh_file, output_name, debug, individual):
         up = np.array([0, 1])
         frame_width = Config.bed_width - 2 * (Config.padding - Config.t)
         frame_height = Config.bed_height - 2 * (Config.padding - Config.t)
-        print frame_height
         for i, b in enumerate(packer):
             r = renderer(axis_range=np.array([Config.bed_width, Config.bed_height]))
             # draw positioning frame
