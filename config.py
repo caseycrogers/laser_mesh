@@ -1,16 +1,22 @@
 class Config(object):
-    bed_width = 279.4  # Definitely not right?
+    font_file = '1CamBam_Stick_1.ttf'
+
+    bed_width = 300
     bed_height = 200
 
     padding = 2
 
-    mat_thickness = 6.35  # quarter inch ply
-    t = .1
+    mat_thickness = 3.06  # eighth inch ply
+    t = .11  # compensate for the laser's kerf
+    attachment_tab = .2  # Amount by which to under cut a line to leave the piece partially attached
 
-    offset = mat_thickness/2.0
+    nail_hole_diameter = .5
+
+    joint_depth = mat_thickness
+    min_thickness = mat_thickness
 
     text_offset = .75
-    text_height = mat_thickness - 2 * text_offset
+    text_height = joint_depth + min_thickness
 
-    min_edge_width = offset*2 + mat_thickness
+    min_edge_width = joint_depth + mat_thickness
 

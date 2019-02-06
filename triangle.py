@@ -20,8 +20,7 @@ class Triangle(object):
 
     @property
     def points(self):
-        # flatten and dedupe
-        return [e.point_b for e in self.edges]
+        return [e.point_a for e in self.edges]
 
     def flatten_point(self, point):
         ret = self.flatten_matrix.dot(point)
@@ -33,12 +32,14 @@ class Edge:
     male = 1
     female = 2
 
-    def __init__(self, point_a, point_b):
+    def __init__(self, point_a, point_b, angle_a, angle_b):
         self.points = [point_a, point_b]
+        self.angles = [angle_a, angle_b]
         self._angle = None
         self.index = None
         self._adj_face_normal = None
         self._edge_type = Edge.open
+        self._edge_mate = None
 
     def __eq__(self, other):
         if type(self) != type(other):
@@ -48,6 +49,9 @@ class Edge:
         if self.point_a == other.point_b and self.point_b == other.point_a:
             return True
 
+    def __str__(self):
+        return 'Edge({0}, {1})'.format(tuple(self.point_a), tuple(self.point_b))
+
     def indexable(self):
         # Convert to a frozenset of tuples for dictionary indexing
         return frozenset((tuple(self.point_a), tuple(self.point_b)))
@@ -55,12 +59,19 @@ class Edge:
     def set_type(self, edge_type):
         self._edge_type = edge_type
 
-    def set_angle(self, edge_angle):
+    def set_edge_angle(self, edge_angle):
         self._angle = edge_angle
 
+    def set_edge_mate(self, edge_mate):
+        self._edge_mate = edge_mate
+
     @property
-    def get_angle(self):
+    def get_edge_angle(self):
         return self._angle
+
+    @property
+    def get_edge_mate(self):
+        return self._edge_mate
 
     @property
     def is_open(self):
@@ -85,6 +96,14 @@ class Edge:
     @property
     def point_b(self):
         return self.points[1]
+
+    @property
+    def angle_a(self):
+        return self.angles[0]
+
+    @property
+    def angle_b(self):
+        return self.angles[1]
 
     @property
     def length(self):

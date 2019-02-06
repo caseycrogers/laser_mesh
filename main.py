@@ -2,7 +2,7 @@ import os
 from stl import mesh
 from triangle import *
 from renderer import *
-from geometery_utils import distance
+from geometery_utils import *
 from rectpack import PackingMode, PackingBin, newPacker, float2dec
 from rectpack import maxrects, skyline
 
@@ -29,12 +29,16 @@ def main(mesh_file, output_name, debug, individual):
     curr_index = 0
 
     for face, face_normal in zip(src_mesh.vectors, src_mesh.normals):
-        # three edges consisting of each pair of points
+        unit_norm = normalized(face_normal)
+        angles = [
+            angle_between_three_points(face[i - 1], face[i], face[(i + 1) % len(face)], unit_norm)
+            for i in range(len(face))
+        ]
         tri = Triangle(
             face_normal,
-            Edge(face[0], face[1]),
-            Edge(face[1], face[2]),
-            Edge(face[2], face[0]),
+            Edge(face[0], face[1], angles[0], angles[1]),
+            Edge(face[1], face[2], angles[1], angles[2]),
+            Edge(face[2], face[0], angles[2], angles[0]),
         )
         for edge in tri.edges:
             try:
@@ -53,10 +57,12 @@ def main(mesh_file, output_name, debug, individual):
                 edge_angle = angle_between_faces(third_vert, third_vert_mate, tri.unit_norm, tri_mate.unit_norm)
 
                 edge.set_type(Edge.male)
-                edge.set_angle(edge_angle)
+                edge.set_edge_angle(edge_angle)
+                edge.set_edge_mate(edge_mate)
 
                 edge_mate.set_type(Edge.female)
-                edge_mate.set_angle(edge_angle)
+                edge_mate.set_edge_angle(edge_angle)
+                edge_mate.set_edge_mate(edge)
                 edge_mate.index = curr_index
                 curr_index += 1
             except KeyError:
@@ -95,7 +101,6 @@ def main(mesh_file, output_name, debug, individual):
                 i += 1
             packer.add_bin(float2dec(Config.bed_width, 2), float2dec(Config.bed_height, 2), count=float('inf'))
             packer.pack()
-            print len(packer.bin_list())
             if best_packer is None or len(packer.bin_list()) < len(best_packer.bin_list()):
                 best_packer = packer
 

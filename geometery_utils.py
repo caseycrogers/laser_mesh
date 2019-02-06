@@ -47,11 +47,30 @@ def vector_angle_2d(v):
     return np.arctan2(v[1], v[0])
 
 
+def angle_between_three_points_2d(a, p0, p1):
+    return angle_between_three_points(np.append(a, 0.0), np.append(p0, 0.0), np.append(p1, 0.0),
+                                      np.array([0.0, 0.0, 1.0]))
+
+
+def angle_between_three_points(a, p0, p1, n):
+    return angle_between_vectors(p0 - a, p1 - a, n)
+
+
+def angle_between_vectors(u, v, n):
+    return np.arctan2(np.linalg.det(np.column_stack((u, v, n))), np.dot(u, v))
+
+
 def rotate_around_origin_2d(v, theta):
     # no dammit stackoverflow I wanted CC rotation
     theta = -theta
     x, y = v
     return np.array([x * np.cos(theta) + y * np.sin(theta), -x * np.sin(theta) + y * np.cos(theta)])
+
+
+def nearest_point_on_line(a, b, c):
+    n = normalized(b - a)
+    s = np.dot(c - a, n)
+    return a + s * n
 
 
 # a and b are the non-shared points on the two respective faces
@@ -74,3 +93,22 @@ def point_equals(a, b):
 
 def mm_to_inch(mm):
     return 0.0393701*mm
+
+
+def find_joint_offset(t, theta):
+    if theta >= np.pi:
+        # Only convex joints need to be offset
+        return 0
+    return t / np.tan(theta / 2.0)
+
+
+def offset_triangle_2d(points, edge_offsets):
+    adjusted = [np.copy(p) for p in points]
+    for i in range(len(points)):
+        a_i, b_i, c_i = i, (i + 1) % len(points), (i + 2) % len(points)
+        a, b, c = points[a_i], points[b_i], points[c_i]
+        alpha = angle_between_three_points_2d(a, b, c)
+        beta = angle_between_three_points_2d(b, c, a)
+        adjusted[a_i] += edge_offsets[a_i] * normalized(c - a) / np.sin(alpha)
+        adjusted[b_i] += edge_offsets[a_i] * normalized(c - b) / np.sin(beta)
+    return adjusted

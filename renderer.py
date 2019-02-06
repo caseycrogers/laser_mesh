@@ -2,6 +2,7 @@ from matplotlib import transforms
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.text import TextPath
+from matplotlib.font_manager import FontProperties
 from matplotlib import patches
 from config import Config
 import sys
@@ -19,9 +20,10 @@ class Color:
         return hash((self.r, self.g, self.b, self.description))
 
 
-CUT = Color(255, 0, 255, "CUT")
-PERFORATED = Color(0, 255, 255, "PERFORATE")
-ENGRAVE = Color(255, 255, 0, "ENGRAVE")
+CUT_THICK = Color(0, 0, 255, "CUT_THICK")
+CUT_THIN = Color(255, 0, 0, "CUT_THIN")
+ENGRAVE_THICK = Color(0, 128, 0, "ENGRAVE_THICK")
+ENGRAVE_THIN = Color(255, 165, 0, "ENGRAVE_THIN")
 FRAME = Color(128, 128, 128, "FRAME")
 DEBUG = Color(0, 0, 0, "DEBUG")
 
@@ -40,13 +42,22 @@ class _MatPlotLibRenderer:
     def _convert_color(color):
         return color.r / 255.0, color.g / 255.0, color.b / 255.0
 
-    def add_line(self, a, b, color=CUT):
+    def add_line(self, a, b, color=CUT_THICK, tab=0.0):
+        if tab > 0:
+            mid = midpoint(a, b)
+            # leave a gap in the center
+            self.add_line(a, mid - tab/2.0*normalized(mid - a), color=color)
+            return self.add_line(mid + tab/2.0*normalized(mid - a), b, color=color)
         self._colors.add(color)
         self._ax.plot([a[0], b[0]], [a[1], b[1]], color=self._convert_color(color))
 
-    def add_text(self, a, v, text, max_w, max_h, color=ENGRAVE, h_center=False, v_center=False):
+    def add_circle(self, a, d, color=CUT_THICK):
         self._colors.add(color)
-        text_path = TextPath([0, 0], text)
+        self._ax.add_patch(patches.Circle(a, d/2.0, color=self._convert_color(color)))
+
+    def add_text(self, a, v, text, max_w, max_h, color=ENGRAVE_THICK, h_center=False, v_center=False):
+        self._colors.add(color)
+        text_path = TextPath([0, 0], text, font_properties=FontProperties(fname=Config.font_file))
         bb = text_path.get_extents()
         h_adjust, v_adjust = 0, 0
         if h_center:
@@ -70,41 +81,51 @@ class _MatPlotLibRenderer:
         self._ax.add_patch(patches.PathPatch(text_path, facecolor='none', edgecolor=self._convert_color(color)))
 
     def add_triangle(self, triangle, translation=np.array([0, 0])):
-        for edge in triangle.edges:
+        def _get_adjusted_points(triangle):
+            points_2d = [triangle.flatten_point(p)[0:2] for p in triangle.points]
+            offsets = [find_joint_offset(Config.mat_thickness, e.get_edge_angle)
+                       if not e.is_open else 0.0
+                       for e in triangle.edges]
+            return offset_triangle_2d(points_2d, offsets)
+        adjusted_points = _get_adjusted_points(triangle)
+
+        def render_cutout():
+            cutout = [p + translation for p in
+                      offset_triangle_2d(adjusted_points, 3*[Config.joint_depth + Config.min_thickness])]
+            self.add_line(cutout[0], cutout[1])
+            self.add_line(cutout[1], cutout[2])
+            self.add_line(cutout[2], cutout[0])
+
+        def render_holes():
+            cutout = [p + translation for p in
+                      offset_triangle_2d(adjusted_points, 3*[(Config.joint_depth + Config.min_thickness)/2.0])]
+            self.add_circle(cutout[0], Config.nail_hole_diameter)
+            self.add_circle(cutout[1], Config.nail_hole_diameter)
+            self.add_circle(cutout[2], Config.nail_hole_diameter)
+            self.add_circle(cutout[0], Config.nail_hole_diameter, color=CUT_THIN)
+            self.add_circle(cutout[1], Config.nail_hole_diameter, color=CUT_THIN)
+            self.add_circle(cutout[2], Config.nail_hole_diameter, color=CUT_THIN)
+
+        render_cutout()
+
+        for i, edge in enumerate(triangle.edges):
             # convert to 2D coordinate space
-            a = triangle.flatten_point(edge.point_a)[0:2] + translation
-            b = triangle.flatten_point(edge.point_b)[0:2] + translation
+            a_orig = triangle.flatten_point(edge.point_a)[0:2] + translation
+            b_orig = triangle.flatten_point(edge.point_b)[0:2] + translation
+            # we need to offset edges at convex joints to account for material thickness
+            a = adjusted_points[i] + translation
+            b = adjusted_points[(i + 1) % len(adjusted_points)] + translation
             mid = midpoint(a, b)
             width = distance(a, b)
 
             cs = CoordinateSystem2D(normalized(b - a), normal(b, a))
             mirrored = lambda p: cs.mirror_x(p, mid)
 
-            def render_edge():
-                p1 = a
-                p2 = mid + cs.left(Config.mat_thickness / 2.0)
-                self.add_line(p1, p2)
-                p3 = p2 + cs.up(Config.mat_thickness / 2.0)
-                self.add_line(p2, p3)
-                p4 = p3 + cs.right(Config.mat_thickness)
-                self.add_line(p3, p4)
-                p5 = p4 + cs.down(Config.mat_thickness / 2.0)
-                self.add_line(p4, p5)
-                p6 = b
-                self.add_line(p5, p6)
-
-            def render_text():
-                text_point = mid + cs.right(Config.mat_thickness / 2.0 + Config.text_offset) + \
-                             cs.up(Config.text_offset)
-                self.add_text(text_point, b - a,
-                              str(edge.index) + ('c' if edge.is_concave else ''),
-                              distance(b, text_point) - Config.mat_thickness, Config.text_height)
-
             def render_joint(joint_point):
                 # reduce angles from 0 - 360 to 0 - 180 for simplicity
-                joint_angle = edge.get_angle if not edge.is_concave else edge.get_angle - np.pi
-                joint_width = Config.mat_thickness
-                joint_depth = Config.mat_thickness / 2.0
+                joint_angle = edge.get_edge_angle if not edge.is_concave else 2 * np.pi - edge.get_edge_angle
+                joint_width = Config.mat_thickness + 2*Config.t
+                joint_depth = Config.joint_depth + 2*Config.t
 
                 rot_cs = cs.rotated_copy(np.pi / 2.0 - joint_angle)
                 long_edge = joint_depth + joint_width / np.tan(joint_angle / 2.0)
@@ -122,19 +143,76 @@ class _MatPlotLibRenderer:
 
                 p6 = p5 + cs.up(joint_depth)
                 self.add_line(p5, p6)
-                p7 = p1
-                self.add_line(p6, p7)
-                self.add_text(p5, p2 - p5, str(edge.index), distance(p2, p5) - Config.text_offset, Config.text_height,
+                self.add_text(p5, p2 - p5, str(edge.index), distance(p2, p5) - Config.text_offset, joint_width,
                               v_center=True)
+                p7 = p6 + cs.left(joint_width)
+                self.add_line(p6, p7, tab=Config.attachment_tab)
+                return p6
 
+            def get_joint_bias():
+                def bias(theta):
+                    # place joint nearer to obtuse angles, further from acute ones
+                    return theta / np.pi
+                mate = edge.get_edge_mate
+                # invert the ratios for the angles on the right side of this edge
+                bias_from_left = np.average([bias(edge.angle_a), 1 - bias(edge.angle_b),
+                                             bias(mate.angle_b), 1 - bias(mate.angle_a)])
+                return bias_from_left
+
+            def render_edge():
+                notch_width = Config.mat_thickness - 2*Config.t
+                # joint center needs to be positioned respective to the original side otherwise
+                # mating joins will not line up properly depending on their respective offsets
+                # pick the joint point biased towards the centers of the offset triangle edges
+                biased_point = a_orig + cs.right(distance(a_orig, b_orig) * get_joint_bias())
+                joint_center = nearest_point_on_line(a, b, biased_point)
+                if distance(a, joint_center) + notch_width / 2.0 > distance(a, b):
+                    print 'Joint is falling off the end of the edge.'
+                p1 = a
+                p2 = joint_center + cs.left(notch_width / 2.0)
+                self.add_line(p1, p2, tab=Config.attachment_tab)
+                p3 = p2 + cs.up(Config.joint_depth)
+                self.add_line(p2, p3)
+                p4 = p3 + cs.right(notch_width)
+                self.add_line(p3, p4)
+                p5 = p4 + cs.down(Config.joint_depth)
+                self.add_line(p4, p5)
+
+                p6 = render_joint(p5) if edge.is_male else p5
+                p7 = b
+                self.add_line(p6, p7)
+
+            def render_text():
+                text_point = mid + cs.right(Config.mat_thickness / 2.0 + Config.text_offset) + \
+                             cs.up(Config.text_offset)
+                self.add_text(text_point, b - a,
+                              str(edge.index) + ('c' if edge.is_concave else ''),
+                              distance(b, text_point) - Config.text_offset, Config.text_height - 2*Config.text_offset)
+
+            def render_panel_edge():
+                self.add_line(a_orig, b_orig, color=CUT_THIN, tab=2*Config.attachment_tab)
+
+            def render_panel_guide():
+                self.add_line(a + cs.left(1), a + cs.right(1), color=ENGRAVE_THIN)
+                self.add_line(b + cs.left(1), b + cs.right(1), color=ENGRAVE_THIN)
+
+            def render_panel_text():
+                text_point = midpoint(a_orig, b_orig) + cs.up(Config.text_offset)
+                self.add_text(text_point, b_orig - a_orig,
+                              str(edge.index),
+                              distance(b, text_point) - Config.text_offset, Config.text_height, ENGRAVE_THIN,
+                              h_center=True)
+
+            # render panel edge whether or not the edge is open
+            render_panel_edge()
+            render_panel_guide()
             if edge.is_open:
                 # Don't add anything to an open edge
                 self.add_line(a, b)
             else:
-                if edge.is_male:
-                    render_joint(midpoint(a, b) + cs.left(Config.mat_thickness / 2.0))
                 render_edge()
                 render_text()
+                render_panel_text()
 
                 if width < Config.min_edge_width:
                     print 'side with length {0} is shorter than minimum length {1}'.format(
@@ -195,7 +273,7 @@ class PackingBoxRenderer(_MatPlotLibRenderer):
         assert self._triangle is None, 'PackingBoxRenderer should only ever be called with one triangle.'
         self._triangle = triangle
 
-    def add_line(self, a, b, color=CUT, left_tab=False, right_tab=False):
+    def add_line(self, a, b, color=CUT_THICK, tab=0.0):
         for x in (a[0], b[0]):
             self._x_min = min(self._x_min, x)
             self._x_max = max(self._x_max, x)
@@ -203,7 +281,10 @@ class PackingBoxRenderer(_MatPlotLibRenderer):
             self._y_min = min(self._y_min, y)
             self._y_max = max(self._y_max, y)
 
-    def add_text(self, a, v, text, max_w, max_h, color=ENGRAVE, h_center=True, v_center=True):
+    def add_text(self, a, v, text, max_w, max_h, color=ENGRAVE_THICK, h_center=True, v_center=True):
+        pass
+
+    def add_circle(self, a, r, color=CUT_THICK):
         pass
 
     def update(self):
