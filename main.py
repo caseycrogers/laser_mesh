@@ -77,7 +77,7 @@ def main(mesh_file, output_name, debug, individual):
     if individual:
         for i, poly in enumerate(tris):
             r = renderer()
-            r.add_triangle(poly)
+            r.add_polygon(poly)
             indices = [e.index for e in poly.edges]
             r.finish('{0}\\{0}-tri{1}-{2}_{3}_{4}'.format(output_name, i, *indices))
     else:
@@ -91,7 +91,7 @@ def main(mesh_file, output_name, debug, individual):
             i = 0
             for poly in tris:
                 r = PackingBoxRenderer()
-                r.add_triangle(poly)
+                r.add_polygon(poly)
                 box = r.finish('')
                 rid_to_packing_box[i] = box
                 packer.add_rect(*box.rect, rid=i)
@@ -122,7 +122,7 @@ def main(mesh_file, output_name, debug, individual):
             for rect in b:
                 orig_box = rid_to_packing_box[rect.rid]
                 delta = np.array([float(rect.x), float(rect.y)]) - orig_box.bottom_left
-                r.add_triangle(orig_box.triangle, translation=delta)
+                r.add_polygon(orig_box.triangle, translation=delta)
                 r.update()
 
                 min_edge_index = min(min_edge_index, *[e.index for e in orig_box.triangle.edges])
@@ -131,16 +131,14 @@ def main(mesh_file, output_name, debug, individual):
 
 
 def merge_coplanar_faces(faces, face_normals):
-    def indexable(e):
+    def indexable(a):
         try:
-            return tuple(indexable(v) for v in e)
+            return tuple(indexable(v) for v in a)
         except TypeError:
-            return e
+            return a
 
     def merge(a, b, shared):
         def rotated(f):
-            print shared
-            print map(indexable, a)
             i = max(map(indexable, a).index(shared[0]), map(indexable, b).index(shared[1]))
             return f[i:] + f[:i]
         # only strong IC's can read this
@@ -161,7 +159,7 @@ def merge_coplanar_faces(faces, face_normals):
                 norm_mate = point_tup_to_face_normal[point_set]
                 if np.dot(normalized(norm), normalized(norm_mate)) == 1.0:
                     merged = True
-                    merge(face, face_mate, tuple(point_set))
+                    merge(face_mate, face, tuple(point_set))
             except KeyError:
                 point_tup_to_face[point_set] = face
                 point_tup_to_face_normal[point_set] = norm

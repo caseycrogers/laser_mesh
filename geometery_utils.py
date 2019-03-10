@@ -1,5 +1,6 @@
 import numpy as np
 
+from itertools import chain
 
 class CoordinateSystem2D(object):
     def __init__(self, x_vector, y_vector):
@@ -106,15 +107,13 @@ def find_joint_offset(t, theta):
     return t / np.tan(theta / 2.0)
 
 
-def offset_triangle_2d(points, edge_offsets):
+def offset_polygon_2d(points, offsets):
     adjusted = [np.copy(p) for p in points]
-    for i in range(len(points)):
-        a_i, b_i, c_i = i, (i + 1) % len(points), (i + 2) % len(points)
-        a, b, c = points[a_i], points[b_i], points[c_i]
+    for a_i, a, b_i, b, c_i, c in map(chain.from_iterable, adjacent_nlets(list(enumerate(points)), 3)):
         alpha = angle_between_three_points_2d(a, b, c)
         beta = angle_between_three_points_2d(b, c, a)
-        adjusted[a_i] += edge_offsets[a_i] * normalized(c - a) / np.sin(alpha)
-        adjusted[b_i] += edge_offsets[a_i] * normalized(c - b) / np.sin(beta)
+        adjusted[a_i] += offsets[a_i] * normalized(c - a) / np.sin(alpha)
+        adjusted[b_i] += offsets[a_i] * normalized(c - b) / np.sin(beta)
     return adjusted
 
 

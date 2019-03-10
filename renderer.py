@@ -80,42 +80,40 @@ class _MatPlotLibRenderer:
         )
         self._ax.add_patch(patches.PathPatch(text_path, facecolor='none', edgecolor=self._convert_color(color)))
 
-    def add_triangle(self, triangle, translation=np.array([0, 0])):
-        def _get_adjusted_points(triangle):
-            points_2d = [triangle.flatten_point(p)[0:2] for p in triangle.points]
+    def add_polygon(self, polygon, translation=np.array([0, 0])):
+        def _get_adjusted_points(polygon):
+            points_2d = [polygon.flatten_point(p)[0:2] for p in polygon.points]
             offsets = [find_joint_offset(Config.mat_thickness, e.get_edge_angle)
                        if not e.is_open else 0.0
-                       for e in triangle.edges]
-            return offset_triangle_2d(points_2d, offsets)
-        adjusted_points = _get_adjusted_points(triangle)
+                       for e in polygon.edges]
+            return offset_polygon_2d(points_2d, offsets)
+        adjusted_points = _get_adjusted_points(polygon)
 
         def render_cutout():
             cutout = [p + translation for p in
-                      offset_triangle_2d(adjusted_points, 3*[Config.joint_depth + Config.min_thickness])]
+                      offset_polygon_2d(adjusted_points,
+                                        len(adjusted_points)*[Config.joint_depth + Config.min_thickness])]
             if np.dot(adjusted_points[1] - adjusted_points[0], cutout[1] - cutout[0]) < 0:
-                print 'Triangle too small for cutout!'
+                print 'polygon too small for cutout!'
                 return
-            self.add_line(cutout[0], cutout[1])
-            self.add_line(cutout[1], cutout[2])
-            self.add_line(cutout[2], cutout[0])
+            for line in adjacent_nlets(cutout, 2):
+                self.add_line(line[0], line[1])
 
         def render_holes():
             cutout = [p + translation for p in
-                      offset_triangle_2d(adjusted_points, 3*[(Config.joint_depth + Config.min_thickness)/2.0])]
-            self.add_circle(cutout[0], Config.nail_hole_diameter)
-            self.add_circle(cutout[1], Config.nail_hole_diameter)
-            self.add_circle(cutout[2], Config.nail_hole_diameter)
-            self.add_circle(cutout[0], Config.nail_hole_diameter + .2, color=CUT_THIN)
-            self.add_circle(cutout[1], Config.nail_hole_diameter + .2, color=CUT_THIN)
-            self.add_circle(cutout[2], Config.nail_hole_diameter + .2, color=CUT_THIN)
+                      offset_polygon_2d(adjusted_points,
+                                        len(adjusted_points)*[(Config.joint_depth + Config.min_thickness)/2.0])]
+            for point in cutout:
+                self.add_circle(point, Config.nail_hole_diameter)
+                self.add_circle(point, Config.nail_hole_diameter + .4, color=CUT_THIN)
 
         render_cutout()
         render_holes()
 
-        for i, edge in enumerate(triangle.edges):
+        for i, edge in enumerate(polygon.edges):
             # convert to 2D coordinate space
-            a_orig = triangle.flatten_point(edge.point_a)[0:2] + translation
-            b_orig = triangle.flatten_point(edge.point_b)[0:2] + translation
+            a_orig = polygon.flatten_point(edge.point_a)[0:2] + translation
+            b_orig = polygon.flatten_point(edge.point_b)[0:2] + translation
             # we need to offset edges at convex joints to account for material thickness
             a = adjusted_points[i] + translation
             b = adjusted_points[(i + 1) % len(adjusted_points)] + translation
@@ -167,7 +165,7 @@ class _MatPlotLibRenderer:
                 notch_width = Config.mat_thickness - 2*Config.t
                 # joint center needs to be positioned respective to the original side otherwise
                 # mating joins will not line up properly depending on their respective offsets
-                # pick the joint point biased towards the centers of the offset triangle edges
+                # pick the joint point biased towards the centers of the offset polygon edges
                 biased_point = a_orig + cs.right(distance(a_orig, b_orig) * get_joint_bias())
                 joint_center = nearest_point_on_line(a, b, biased_point)
                 if distance(a, joint_center) + notch_width / 2.0 > distance(a, b):
@@ -270,12 +268,12 @@ class PackingBoxRenderer(_MatPlotLibRenderer):
         self._x_max = sys.float_info.min
         self._y_min = sys.float_info.max
         self._y_max = sys.float_info.min
-        self._triangle = None
+        self._polygon = None
 
-    def add_triangle(self, triangle, translation=None):
-        _MatPlotLibRenderer.add_triangle(self, triangle)
-        assert self._triangle is None, 'PackingBoxRenderer should only ever be called with one triangle.'
-        self._triangle = triangle
+    def add_polygon(self, polygon, translation=None):
+        _MatPlotLibRenderer.add_polygon(self, polygon)
+        assert self._polygon is None, 'PackingBoxRenderer should only ever be called with one polygon.'
+        self._polygon = polygon
 
     def add_line(self, a, b, color=CUT_THICK, tab=0.0):
         for x in (a[0], b[0]):
@@ -295,7 +293,7 @@ class PackingBoxRenderer(_MatPlotLibRenderer):
         pass
 
     def finish(self, name):
-        return PackingBox(self._triangle,
+        return PackingBox(self._polygon,
                           self._x_min - Config.padding,
                           self._x_max + Config.padding,
                           self._y_min - Config.padding,
