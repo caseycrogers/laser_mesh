@@ -1,6 +1,6 @@
 import os
 from stl import mesh
-from triangle import *
+from polygon import *
 from renderer import *
 from geometery_utils import *
 from rectpack import PackingMode, PackingBin, newPacker, float2dec
@@ -25,36 +25,33 @@ def main(mesh_file, output_name, debug, individual):
 
     tris = []
     edge_to_edge_mate = {}
-    edge_to_tri_mate = {}
+    edge_to_poly_mate = {}
     curr_index = 0
 
-    for face, face_normal in zip(src_mesh.vectors, src_mesh.normals):
+    faces, face_normals = merge_coplanar_faces(src_mesh.vectors, src_mesh.normals)
+
+    for face, face_normal in zip(faces, face_normals):
         unit_norm = normalized(face_normal)
-        angles = [
-            angle_between_three_points(face[i - 1], face[i], face[(i + 1) % len(face)], unit_norm)
-            for i in range(len(face))
-        ]
-        tri = Triangle(
+        poly = Polygon(
             face_normal,
-            Edge(face[0], face[1], angles[0], angles[1]),
-            Edge(face[1], face[2], angles[1], angles[2]),
-            Edge(face[2], face[0], angles[2], angles[0]),
+            [Edge(b, c, angle_between_three_points(a, b, c, unit_norm), angle_between_three_points(b, c, d, unit_norm))
+             for a, b, c, d in adjacent_nlets(face, 4)]
         )
-        for edge in tri.edges:
+        for edge in poly.edges:
             try:
                 # find the edge mate if present
                 edge.index = curr_index
                 edge_mate = edge_to_edge_mate[edge.indexable()]
-                tri_mate = edge_to_tri_mate[edge.indexable()]
+                poly_mate = edge_to_poly_mate[edge.indexable()]
 
-                # Find the two vertices not shared by the triangles, needed to help determine concavity
-                third_vert = [p for p in tri.points
-                              if not point_equals(p, edge.point_a)
-                              and not point_equals(p, edge.point_b)][0]
-                third_vert_mate = [p for p in tri_mate.points
-                                   if not point_equals(p, edge.point_a)
-                                   and not point_equals(p, edge.point_b)][0]
-                edge_angle = angle_between_faces(third_vert, third_vert_mate, tri.unit_norm, tri_mate.unit_norm)
+                # Find the two vertices not shared by the two polygons, needed to help determine concavity
+                disjoint_vert = [p for p in poly.points
+                                 if not point_equals(p, edge.point_a)
+                                 and not point_equals(p, edge.point_b)][0]
+                disjoint_vert_mate = [p for p in poly_mate.points
+                                      if not point_equals(p, edge.point_a)
+                                      and not point_equals(p, edge.point_b)][0]
+                edge_angle = angle_between_faces(disjoint_vert, disjoint_vert_mate, poly.unit_norm, poly_mate.unit_norm)
 
                 edge.set_type(Edge.male)
                 edge.set_edge_angle(edge_angle)
@@ -68,8 +65,8 @@ def main(mesh_file, output_name, debug, individual):
             except KeyError:
                 # edge has not already been visited, add it to the dictionaries
                 edge_to_edge_mate[edge.indexable()] = edge
-                edge_to_tri_mate[edge.indexable()] = tri
-        tris.append(tri)
+                edge_to_poly_mate[edge.indexable()] = poly
+        tris.append(poly)
 
     edge_lengths = set()
     [edge_lengths.update([distance(v[0], v[1]), distance(v[1], v[2]), distance(v[2], v[0])]) for v in src_mesh.vectors]
@@ -78,10 +75,10 @@ def main(mesh_file, output_name, debug, individual):
     )
 
     if individual:
-        for i, tri in enumerate(tris):
+        for i, poly in enumerate(tris):
             r = renderer()
-            r.add_triangle(tri)
-            indices = [e.index for e in tri.edges]
+            r.add_triangle(poly)
+            indices = [e.index for e in poly.edges]
             r.finish('{0}\\{0}-tri{1}-{2}_{3}_{4}'.format(output_name, i, *indices))
     else:
         best_packer = None
@@ -92,9 +89,9 @@ def main(mesh_file, output_name, debug, individual):
                                rotation=False)
             rid_to_packing_box = {}
             i = 0
-            for tri in tris:
+            for poly in tris:
                 r = PackingBoxRenderer()
-                r.add_triangle(tri)
+                r.add_triangle(poly)
                 box = r.finish('')
                 rid_to_packing_box[i] = box
                 packer.add_rect(*box.rect, rid=i)
@@ -131,6 +128,48 @@ def main(mesh_file, output_name, debug, individual):
                 min_edge_index = min(min_edge_index, *[e.index for e in orig_box.triangle.edges])
                 max_edge_index = max(max_edge_index, *[e.index for e in orig_box.triangle.edges])
             r.finish('{0}\\{0}-bed{1}_{2}_{3}'.format(output_name, i, min_edge_index, max_edge_index))
+
+
+def merge_coplanar_faces(faces, face_normals):
+    def indexable(e):
+        try:
+            return tuple(indexable(v) for v in e)
+        except TypeError:
+            return e
+
+    def merge(a, b, shared):
+        def rotated(f):
+            print shared
+            print map(indexable, a)
+            i = max(map(indexable, a).index(shared[0]), map(indexable, b).index(shared[1]))
+            return f[i:] + f[:i]
+        # only strong IC's can read this
+        c = rotated(a) + rotated(b)[1:-1]
+        del a[:]
+        a += c
+
+    point_tup_to_face = {}
+    point_tup_to_face_normal = {}
+    merged_faces = []
+    merged_normals = []
+    for face, norm in zip(map(list, faces), face_normals):
+        merged = False
+        for e in adjacent_nlets(face, 2):
+            point_set = frozenset(indexable(e))
+            try:
+                face_mate = point_tup_to_face[point_set]
+                norm_mate = point_tup_to_face_normal[point_set]
+                if np.dot(normalized(norm), normalized(norm_mate)) == 1.0:
+                    merged = True
+                    merge(face, face_mate, tuple(point_set))
+            except KeyError:
+                point_tup_to_face[point_set] = face
+                point_tup_to_face_normal[point_set] = norm
+        if not merged:
+            merged = False
+            merged_faces.append(face)
+            merged_normals.append(norm)
+    return merged_faces, merged_normals
 
 
 if __name__ == "__main__":

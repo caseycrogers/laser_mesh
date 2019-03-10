@@ -91,6 +91,10 @@ def point_equals(a, b):
     return tuple(a) == tuple(b)
 
 
+def unit_vector_from_points(a, b):
+    return normalized(b - a)
+
+
 def mm_to_inch(mm):
     return 0.0393701*mm
 
@@ -112,3 +116,7 @@ def offset_triangle_2d(points, edge_offsets):
         adjusted[a_i] += edge_offsets[a_i] * normalized(c - a) / np.sin(alpha)
         adjusted[b_i] += edge_offsets[a_i] * normalized(c - b) / np.sin(beta)
     return adjusted
+
+
+def adjacent_nlets(q, n):
+    return zip(*[q[c:] + q[:c] for c in range(n)])

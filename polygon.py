@@ -1,13 +1,14 @@
 from geometery_utils import *
 
 
-class Triangle(object):
-    def __init__(self, face_normal, edge_a, edge_b, edge_c):
-        self.edges = [edge_a, edge_b, edge_c]
+class Polygon(object):
+    def __init__(self, face_normal, edges):
+        self.edges = edges
         self.adj_unit_norms = []
 
         self.unit_norm = face_normal / np.linalg.norm(face_normal)
-        self.x_prime = (edge_a.point_b - edge_a.point_a) / np.linalg.norm(edge_a.point_b - edge_a.point_a)
+        # Use the vector defined by the first edge as the x axis
+        self.x_prime = unit_vector_from_points(edges[0].point_b, edges[0].point_a)
         self.y_prime = np.cross(self.unit_norm, self.x_prime)
 
         basis_matrix = np.row_stack((self.x_prime, self.y_prime, self.unit_norm))
@@ -64,6 +65,17 @@ class Edge:
 
     def set_edge_mate(self, edge_mate):
         self._edge_mate = edge_mate
+
+    def set_angle_a(self, angle):
+        self.angles[0] = angle
+
+    def set_angle_b(self, angle):
+        self.angles[1] = angle
+
+
+    @property
+    def angle_b(self):
+        return self.angles[1]
 
     @property
     def get_edge_angle(self):

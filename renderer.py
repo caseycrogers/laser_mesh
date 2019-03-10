@@ -92,6 +92,9 @@ class _MatPlotLibRenderer:
         def render_cutout():
             cutout = [p + translation for p in
                       offset_triangle_2d(adjusted_points, 3*[Config.joint_depth + Config.min_thickness])]
+            if np.dot(adjusted_points[1] - adjusted_points[0], cutout[1] - cutout[0]) < 0:
+                print 'Triangle too small for cutout!'
+                return
             self.add_line(cutout[0], cutout[1])
             self.add_line(cutout[1], cutout[2])
             self.add_line(cutout[2], cutout[0])
@@ -102,11 +105,12 @@ class _MatPlotLibRenderer:
             self.add_circle(cutout[0], Config.nail_hole_diameter)
             self.add_circle(cutout[1], Config.nail_hole_diameter)
             self.add_circle(cutout[2], Config.nail_hole_diameter)
-            self.add_circle(cutout[0], Config.nail_hole_diameter, color=CUT_THIN)
-            self.add_circle(cutout[1], Config.nail_hole_diameter, color=CUT_THIN)
-            self.add_circle(cutout[2], Config.nail_hole_diameter, color=CUT_THIN)
+            self.add_circle(cutout[0], Config.nail_hole_diameter + .2, color=CUT_THIN)
+            self.add_circle(cutout[1], Config.nail_hole_diameter + .2, color=CUT_THIN)
+            self.add_circle(cutout[2], Config.nail_hole_diameter + .2, color=CUT_THIN)
 
         render_cutout()
+        render_holes()
 
         for i, edge in enumerate(triangle.edges):
             # convert to 2D coordinate space
