@@ -109,9 +109,9 @@ def find_joint_offset(t, theta):
 
 def offset_polygon_2d(points, offsets):
     adjusted = [np.copy(p) for p in points]
-    for a_i, a, b_i, b, c_i, c in map(chain.from_iterable, adjacent_nlets(list(enumerate(points)), 3)):
+    for a_i, a, b_i, b, c_i, c, d_i, d in map(chain.from_iterable, adjacent_nlets(list(enumerate(points)), 4)):
         alpha = angle_between_three_points_2d(a, b, c)
-        beta = angle_between_three_points_2d(b, c, a)
+        beta = angle_between_three_points_2d(b, c, d)
         adjusted[a_i] += offsets[a_i] * normalized(c - a) / np.sin(alpha)
         adjusted[b_i] += offsets[a_i] * normalized(c - b) / np.sin(beta)
     return adjusted
@@ -119,3 +119,42 @@ def offset_polygon_2d(points, offsets):
 
 def adjacent_nlets(q, n):
     return zip(*[q[c:] + q[:c] for c in range(n)])
+
+
+def merge_coplanar_faces(faces, face_normals):
+    def indexable(a):
+        try:
+            return tuple(indexable(v) for v in a)
+        except TypeError:
+            return a
+
+    def merge(a, b, shared):
+        def rotated(f):
+            i = max(map(indexable, a).index(shared[0]), map(indexable, b).index(shared[1]))
+            return f[i:] + f[:i]
+        # only strong IC's can read this
+        c = rotated(a) + rotated(b)[1:-1]
+        del a[:]
+        a += c
+
+    point_tup_to_face = {}
+    point_tup_to_face_normal = {}
+    merged_faces = []
+    merged_normals = []
+    for face, norm in zip(map(list, faces), face_normals):
+        merged = False
+        for e in adjacent_nlets(face, 2):
+            point_set = frozenset(indexable(e))
+            try:
+                face_mate = point_tup_to_face[point_set]
+                norm_mate = point_tup_to_face_normal[point_set]
+                if np.dot(normalized(norm), normalized(norm_mate)) == 1.0:
+                    merged = True
+                    merge(face_mate, face, tuple(point_set))
+            except KeyError:
+                point_tup_to_face[point_set] = face
+                point_tup_to_face_normal[point_set] = norm
+        if not merged:
+            merged_faces.append(face)
+            merged_normals.append(norm)
+    return merged_faces, merged_normals

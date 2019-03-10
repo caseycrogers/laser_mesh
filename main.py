@@ -11,7 +11,7 @@ import argparse
 import sys
 
 
-def main(mesh_file, output_name, debug, individual):
+def main(mesh_file, output_name, merge, panels, debug, individual):
     if debug:
         renderer = DebugRenderer
     else:
@@ -28,7 +28,9 @@ def main(mesh_file, output_name, debug, individual):
     edge_to_poly_mate = {}
     curr_index = 0
 
-    faces, face_normals = merge_coplanar_faces(src_mesh.vectors, src_mesh.normals)
+    faces, face_normals = list(map(list, src_mesh.vectors)), list(map(list, src_mesh.normals))
+    if merge:
+        faces, face_normals = merge_coplanar_faces(src_mesh.vectors, src_mesh.normals)
 
     for face, face_normal in zip(faces, face_normals):
         unit_norm = normalized(face_normal)
@@ -76,7 +78,7 @@ def main(mesh_file, output_name, debug, individual):
 
     if individual:
         for i, poly in enumerate(tris):
-            r = renderer()
+            r = renderer(panels=panels)
             r.add_polygon(poly)
             indices = [e.index for e in poly.edges]
             r.finish('{0}\\{0}-tri{1}-{2}_{3}_{4}'.format(output_name, i, *indices))
@@ -106,7 +108,7 @@ def main(mesh_file, output_name, debug, individual):
         frame_width = Config.bed_width - 2 * (Config.padding - Config.t)
         frame_height = Config.bed_height - 2 * (Config.padding - Config.t)
         for i, b in enumerate(packer):
-            r = renderer(axis_range=np.array([Config.bed_width, Config.bed_height]))
+            r = renderer(panels=panels, axis_range=np.array([Config.bed_width, Config.bed_height]))
             # draw positioning frame
             f0 = np.array([Config.padding - Config.t, Config.padding - Config.t])
             f1 = f0 + frame_width * right
@@ -130,53 +132,17 @@ def main(mesh_file, output_name, debug, individual):
             r.finish('{0}\\{0}-bed{1}_{2}_{3}'.format(output_name, i, min_edge_index, max_edge_index))
 
 
-def merge_coplanar_faces(faces, face_normals):
-    def indexable(a):
-        try:
-            return tuple(indexable(v) for v in a)
-        except TypeError:
-            return a
-
-    def merge(a, b, shared):
-        def rotated(f):
-            i = max(map(indexable, a).index(shared[0]), map(indexable, b).index(shared[1]))
-            return f[i:] + f[:i]
-        # only strong IC's can read this
-        c = rotated(a) + rotated(b)[1:-1]
-        del a[:]
-        a += c
-
-    point_tup_to_face = {}
-    point_tup_to_face_normal = {}
-    merged_faces = []
-    merged_normals = []
-    for face, norm in zip(map(list, faces), face_normals):
-        merged = False
-        for e in adjacent_nlets(face, 2):
-            point_set = frozenset(indexable(e))
-            try:
-                face_mate = point_tup_to_face[point_set]
-                norm_mate = point_tup_to_face_normal[point_set]
-                if np.dot(normalized(norm), normalized(norm_mate)) == 1.0:
-                    merged = True
-                    merge(face_mate, face, tuple(point_set))
-            except KeyError:
-                point_tup_to_face[point_set] = face
-                point_tup_to_face_normal[point_set] = norm
-        if not merged:
-            merged = False
-            merged_faces.append(face)
-            merged_normals.append(norm)
-    return merged_faces, merged_normals
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Convert a mesh into cuttable triangles.')
     parser.add_argument('mesh_file', help='Relative path to the input .stl')
+    parser.add_argument('--no_merge', action='store_true', help='Don\'t merge coplanar faces.')
     parser.add_argument('--debug', action='store_true', help='Only render in matplotlib.')
+    parser.add_argument('--no_panels', action='store_true', help='Don\'t render panels.')
     parser.add_argument('--individual', action='store_true', help='Render each triangle individually.')
     args = parser.parse_args()
     main(args.mesh_file,
          args.mesh_file.replace("/", "\\").split("\\")[-1].split(".")[0],
+         not args.no_merge,
+         not args.no_panels,
          args.debug,
          args.individual)

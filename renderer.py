@@ -29,7 +29,7 @@ DEBUG = Color(0, 0, 0, "DEBUG")
 
 
 class _MatPlotLibRenderer:
-    def __init__(self, axis_range=None):
+    def __init__(self, panels=True, axis_range=None):
         plt.axes().set_aspect('equal')
         self._ax = plt.subplot(111)
         self._colors = set()
@@ -37,6 +37,7 @@ class _MatPlotLibRenderer:
         if axis_range is not None:
             self._ax.set_xlim(left=0, right=axis_range[0])
             self._ax.set_ylim(bottom=0, top=axis_range[1])
+        self._render_panels = panels
 
     @staticmethod
     def _convert_color(color):
@@ -205,16 +206,18 @@ class _MatPlotLibRenderer:
                               distance(b, text_point) - Config.text_offset, Config.text_height, ENGRAVE_THIN,
                               h_center=True)
 
-            # render panel edge whether or not the edge is open
-            render_panel_edge()
-            render_panel_guide()
+            if self._render_panels:
+                # render panel edge whether or not the edge is open
+                render_panel_edge()
+                render_panel_guide()
             if edge.is_open:
                 # Don't add anything to an open edge
                 self.add_line(a, b)
             else:
                 render_edge()
                 render_text()
-                render_panel_text()
+                if self._render_panels:
+                    render_panel_text()
 
                 if width < Config.min_edge_width:
                     print 'side with length {0} is shorter than minimum length {1}'.format(
@@ -222,8 +225,8 @@ class _MatPlotLibRenderer:
 
 
 class DXFRenderer(_MatPlotLibRenderer):
-    def __init__(self, axis_range=None):
-        _MatPlotLibRenderer.__init__(self, axis_range)
+    def __init__(self, panels=True, axis_range=None):
+        _MatPlotLibRenderer.__init__(self, panels=panels, axis_range=axis_range)
         plt.axis('off')
         plt.margins(0, 0)
         plt.gca().xaxis.set_major_locator(plt.NullLocator())
@@ -243,9 +246,6 @@ class DXFRenderer(_MatPlotLibRenderer):
 
 
 class DebugRenderer(_MatPlotLibRenderer):
-    def __init__(self, axis_range=None):
-        _MatPlotLibRenderer.__init__(self, axis_range)
-
     def update(self):
         colors, descriptions = zip(*[(c, c.description) for c in self._colors])
         self._ax.legend(
@@ -260,8 +260,8 @@ class DebugRenderer(_MatPlotLibRenderer):
 
 
 class PackingBoxRenderer(_MatPlotLibRenderer):
-    def __init__(self):
-        _MatPlotLibRenderer.__init__(self)
+    def __init__(self, panels=True, ):
+        _MatPlotLibRenderer.__init__(self, panels=panels)
         self._ax = None
         # garbage comparable minimum and maximum values
         self._x_min = sys.float_info.max
