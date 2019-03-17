@@ -33,6 +33,13 @@ class Edge:
     male = 1
     female = 2
 
+    @staticmethod
+    def opposite_type(type):
+        assert type != Edge.open
+        if type == Edge.male:
+            return Edge.female
+        return Edge.male
+
     def __init__(self, point_a, point_b, angle_a, angle_b):
         self.points = [point_a, point_b]
         self.angles = [angle_a, angle_b]

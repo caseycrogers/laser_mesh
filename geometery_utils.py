@@ -2,6 +2,7 @@ import numpy as np
 
 from itertools import chain
 
+
 class CoordinateSystem2D(object):
     def __init__(self, x_vector, y_vector):
         self._x_vector = x_vector
@@ -23,8 +24,8 @@ class CoordinateSystem2D(object):
         return a + self.right(2 * np.dot(mirror_point - a, self._x_vector))
 
     def rotated_copy(self, theta):
-        return CoordinateSystem2D(rotate_around_origin_2d(self._x_vector, theta),
-                                  rotate_around_origin_2d(self._y_vector, theta))
+        return CoordinateSystem2D(rotate_cc_around_origin_2d(self._x_vector, theta),
+                                  rotate_cc_around_origin_2d(self._y_vector, theta))
 
 
 def midpoint(a, b):
@@ -48,20 +49,23 @@ def vector_angle_2d(v):
     return np.arctan2(v[1], v[0])
 
 
-def angle_between_three_points_2d(a, p0, p1):
-    return angle_between_three_points(np.append(a, 0.0), np.append(p0, 0.0), np.append(p1, 0.0),
+def angle_between_three_points_2d(a, b, c):
+    return angle_between_three_points(np.append(a, 0.0), np.append(b, 0.0), np.append(c, 0.0),
                                       np.array([0.0, 0.0, 1.0]))
 
 
-def angle_between_three_points(a, p0, p1, n):
-    return angle_between_vectors(p0 - a, p1 - a, n)
+def angle_between_three_points(a, b, c, n):
+    theta = angle_between_vectors(a - b, c - b, n)
+    if theta < 0:
+        return 2*np.pi + theta
+    return theta
 
 
 def angle_between_vectors(u, v, n):
     return np.arctan2(np.linalg.det(np.column_stack((u, v, n))), np.dot(u, v))
 
 
-def rotate_around_origin_2d(v, theta):
+def rotate_cc_around_origin_2d(v, theta):
     # no dammit stackoverflow I wanted CC rotation
     theta = -theta
     x, y = v
@@ -110,10 +114,10 @@ def find_joint_offset(t, theta):
 def offset_polygon_2d(points, offsets):
     adjusted = [np.copy(p) for p in points]
     for a_i, a, b_i, b, c_i, c, d_i, d in map(chain.from_iterable, adjacent_nlets(list(enumerate(points)), 4)):
-        alpha = angle_between_three_points_2d(a, b, c)
-        beta = angle_between_three_points_2d(b, c, d)
-        adjusted[a_i] += offsets[a_i] * normalized(c - a) / np.sin(alpha)
-        adjusted[b_i] += offsets[a_i] * normalized(c - b) / np.sin(beta)
+        cba = angle_between_three_points_2d(c, b, a)
+        adjusted[b_i] += offsets[b_i] * normalized(a - b) / np.sin(cba)
+        dcb = angle_between_three_points_2d(d, c, b)
+        adjusted[c_i] += offsets[b_i] * normalized(d - c) / np.sin(dcb)
     return adjusted
 
 
@@ -130,31 +134,38 @@ def merge_coplanar_faces(faces, face_normals):
 
     def merge(a, b, shared):
         def rotated(f):
-            i = max(map(indexable, a).index(shared[0]), map(indexable, b).index(shared[1]))
+            i = max(map(indexable, f).index(shared[0]), map(indexable, f).index(shared[1]))
             return f[i:] + f[:i]
         # only strong IC's can read this
         c = rotated(a) + rotated(b)[1:-1]
         del a[:]
         a += c
 
-    point_tup_to_face = {}
-    point_tup_to_face_normal = {}
+    keep_merging = True
     merged_faces = []
     merged_normals = []
-    for face, norm in zip(map(list, faces), face_normals):
-        merged = False
-        for e in adjacent_nlets(face, 2):
-            point_set = frozenset(indexable(e))
-            try:
-                face_mate = point_tup_to_face[point_set]
-                norm_mate = point_tup_to_face_normal[point_set]
-                if np.dot(normalized(norm), normalized(norm_mate)) == 1.0:
-                    merged = True
-                    merge(face_mate, face, tuple(point_set))
-            except KeyError:
-                point_tup_to_face[point_set] = face
-                point_tup_to_face_normal[point_set] = norm
-        if not merged:
-            merged_faces.append(face)
-            merged_normals.append(norm)
+    while keep_merging:
+        point_tup_to_face = {}
+        point_tup_to_face_normal = {}
+        merged_faces = []
+        merged_normals = []
+        keep_merging = False
+        for face, norm in zip(map(list, faces), face_normals):
+            merged = False
+            for e in adjacent_nlets(face, 2):
+                point_set = frozenset(indexable(e))
+                try:
+                    face_mate = point_tup_to_face[point_set]
+                    norm_mate = point_tup_to_face_normal[point_set]
+                    if np.dot(normalized(norm), normalized(norm_mate)) == 1.0:
+                        merged = True
+                        keep_merging = True
+                        merge(face_mate, face, tuple(point_set))
+                except KeyError:
+                    point_tup_to_face[point_set] = face
+                    point_tup_to_face_normal[point_set] = norm
+            if not merged:
+                merged_faces.append(face)
+                merged_normals.append(norm)
+        faces, face_normals = merged_faces, merged_normals
     return merged_faces, merged_normals

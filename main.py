@@ -36,7 +36,7 @@ def main(mesh_file, output_name, merge, panels, debug, individual):
         unit_norm = normalized(face_normal)
         poly = Polygon(
             face_normal,
-            [Edge(b, c, angle_between_three_points(a, b, c, unit_norm), angle_between_three_points(b, c, d, unit_norm))
+            [Edge(b, c, angle_between_three_points(c, b, a, unit_norm), angle_between_three_points(d, c, b, unit_norm))
              for a, b, c, d in adjacent_nlets(face, 4)]
         )
         for edge in poly.edges:
@@ -46,7 +46,7 @@ def main(mesh_file, output_name, merge, panels, debug, individual):
                 edge_mate = edge_to_edge_mate[edge.indexable()]
                 poly_mate = edge_to_poly_mate[edge.indexable()]
 
-                # Find the two vertices not shared by the two polygons, needed to help determine concavity
+                # find the two vertices not shared by the two polygons, needed to help determine concavity
                 disjoint_vert = [p for p in poly.points
                                  if not point_equals(p, edge.point_a)
                                  and not point_equals(p, edge.point_b)][0]
@@ -55,11 +55,13 @@ def main(mesh_file, output_name, merge, panels, debug, individual):
                                       and not point_equals(p, edge.point_b)][0]
                 edge_angle = angle_between_faces(disjoint_vert, disjoint_vert_mate, poly.unit_norm, poly_mate.unit_norm)
 
-                edge.set_type(Edge.male)
+                # set concave edges to female to try to avoid collisions
+                target_type = Edge.female if edge.angle_a > np.pi or edge.angle_b > np.pi else Edge.male
+                edge.set_type(target_type)
                 edge.set_edge_angle(edge_angle)
                 edge.set_edge_mate(edge_mate)
 
-                edge_mate.set_type(Edge.female)
+                edge_mate.set_type(Edge.opposite_type(target_type))
                 edge_mate.set_edge_angle(edge_angle)
                 edge_mate.set_edge_mate(edge)
                 edge_mate.index = curr_index

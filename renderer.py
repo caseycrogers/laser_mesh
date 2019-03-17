@@ -155,11 +155,11 @@ class _MatPlotLibRenderer:
             def get_joint_bias():
                 def bias(theta):
                     # place joint nearer to obtuse angles, further from acute ones
-                    return theta / np.pi
+                    return 1 - min(theta / np.pi, 1)
                 mate = edge.get_edge_mate
-                # invert the ratios for the angles on the right side of this edge
+                # invert the ratios for the angles on the right relative to this edge
                 bias_from_left = np.average([bias(edge.angle_a), 1 - bias(edge.angle_b),
-                                             bias(mate.angle_b), 1 - bias(mate.angle_a)])
+                                             1 - bias(mate.angle_a), bias(mate.angle_b)])
                 return bias_from_left
 
             def render_edge():
