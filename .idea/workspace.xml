@@ -2,10 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="713bade3-674c-47ee-a14a-34d50ff97be5" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/test/test_geometry_utils.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/geometery_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/geometery_utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/test_geometry_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/test/test_geometry_utils.py" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -19,7 +18,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="646">
+            <state relative-caret-position="588">
               <caret line="154" selection-start-line="154" selection-end-line="154" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
@@ -31,8 +30,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/geometery_utils.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="502">
-              <caret line="150" column="10" lean-forward="true" selection-start-line="150" selection-start-column="10" selection-end-line="150" selection-end-column="10" />
+            <state relative-caret-position="425">
+              <caret line="191" column="53" selection-start-line="191" selection-start-column="53" selection-end-line="191" selection-end-column="53" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
               </folding>
@@ -43,8 +42,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/test/test_geometry_utils.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="240">
-              <caret line="12" selection-start-line="12" selection-end-line="12" />
+            <state relative-caret-position="180">
+              <caret line="9" selection-start-line="9" selection-end-line="9" />
               <folding>
                 <element signature="e#0#15#0" expanded="true" />
               </folding>
@@ -188,7 +187,7 @@
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1552855106073" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1552859500833" />
     <property name="settings.editor.selected.configurable" value="editor.preferences.fonts.default" />
   </component>
   <component name="RunDashboard">
@@ -238,7 +237,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
-      <option name="PARAMETERS" value="meshes/octagon1.stl --debug" />
+      <option name="PARAMETERS" value="meshes/wacky1.stl --debug" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -355,15 +354,6 @@
     <servers />
   </component>
   <component name="TestHistory">
-    <history-entry file="Unittests_for_test_geometry_utils_TestGeometryUtils_test_merge - 2019.03.17 at 11h 49m 01s.xml">
-      <configuration name="Unittests for test_geometry_utils.TestGeometryUtils.test_merge" configurationId="tests" />
-    </history-entry>
-    <history-entry file="Unittests_for_test_geometry_utils_TestGeometryUtils_test_merge - 2019.03.17 at 11h 49m 13s.xml">
-      <configuration name="Unittests for test_geometry_utils.TestGeometryUtils.test_merge" configurationId="tests" />
-    </history-entry>
-    <history-entry file="Unittests_for_test_geometry_utils_TestGeometryUtils_test_merge - 2019.03.17 at 11h 50m 02s.xml">
-      <configuration name="Unittests for test_geometry_utils.TestGeometryUtils.test_merge" configurationId="tests" />
-    </history-entry>
     <history-entry file="Unittests_for_test_geometry_utils_TestGeometryUtils_test_merge - 2019.03.17 at 11h 51m 14s.xml">
       <configuration name="Unittests for test_geometry_utils.TestGeometryUtils.test_merge" configurationId="tests" />
     </history-entry>
@@ -385,10 +375,18 @@
     <history-entry file="Unittests_for_test_geometry_utils_TestGeometryUtils_test_merge - 2019.03.17 at 13h 36m 48s.xml">
       <configuration name="Unittests for test_geometry_utils.TestGeometryUtils.test_merge" configurationId="tests" />
     </history-entry>
+    <history-entry file="Unittests_for_test_geometry_utils_TestGeometryUtils_test_merge - 2019.03.17 at 14h 12m 10s.xml">
+      <configuration name="Unittests for test_geometry_utils.TestGeometryUtils.test_merge" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_test_geometry_utils_TestGeometryUtils_test_merge - 2019.03.17 at 14h 12m 11s.xml">
+      <configuration name="Unittests for test_geometry_utils.TestGeometryUtils.test_merge" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_test_geometry_utils_TestGeometryUtils_test_merge - 2019.03.17 at 14h 19m 20s.xml">
+      <configuration name="Unittests for test_geometry_utils.TestGeometryUtils.test_merge" configurationId="tests" />
+    </history-entry>
   </component>
   <component name="ToolWindowManager">
-    <frame x="1091" y="12" width="1110" height="1182" extended-state="0" />
-    <editor active="true" />
+    <frame x="1091" y="0" width="1110" height="1201" extended-state="0" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" weight="0.2756654" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
@@ -398,13 +396,13 @@
       <window_info id="Capture Tool" order="5" />
       <window_info id="Favorites" order="6" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
-      <window_info anchor="bottom" id="Find" order="1" weight="0.32683378" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" sideWeight="0.49714828" visible="true" weight="0.22454806" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.26260704" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.32616824" />
+      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.49714828" weight="0.22056074" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.26168224" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info anchor="bottom" id="Terminal" order="7" sideWeight="0.49714828" weight="0.22740248" />
+      <window_info active="true" anchor="bottom" id="Terminal" order="7" sideWeight="0.49714828" visible="true" weight="0.2271028" />
       <window_info anchor="bottom" id="Event Log" order="8" sideWeight="0.5028517" side_tool="true" weight="0.22897196" />
       <window_info anchor="bottom" id="Version Control" order="9" weight="0.32959852" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
@@ -421,9 +419,9 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/test/test_geometry_utils.py</url>
-          <line>12</line>
-          <option name="timeStamp" value="16" />
+          <url>file://$PROJECT_DIR$/geometery_utils.py</url>
+          <line>166</line>
+          <option name="timeStamp" value="21" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
@@ -431,47 +429,47 @@
   <component name="debuggerHistoryManager">
     <expressions id="evaluateExpression">
       <expression>
+        <expression-string>[indexable(f) for f in self.faces].index(indexable(face))</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>indexable(face) in [indexable(f) for f in self.faces]</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>[indexable(f) for f in self.faces]</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>indexable(face) == indexable(self.faces[0])</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>indexable(f) == indexable(self.faces[0])</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>self.faces</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>face</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
         <expression-string>f[i:] + f[:i]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
         <expression-string>f[:2]</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>f[2:]</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>i</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>rotated(f)</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>f</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>rotated(b)</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>rotated(a)</expression-string>
-        <language-id>Python</language-id>
-        <evaluation-mode>EXPRESSION</evaluation-mode>
-      </expression>
-      <expression>
-        <expression-string>merge(tri_a, tri_b)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
@@ -710,16 +708,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/main.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="646">
-          <caret line="154" selection-start-line="154" selection-end-line="154" />
-          <folding>
-            <element signature="e#0#9#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://C:/Anaconda2/Lib/unittest/case.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="262">
@@ -729,18 +717,28 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/test/test_geometry_utils.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="240">
-          <caret line="12" selection-start-line="12" selection-end-line="12" />
+        <state relative-caret-position="180">
+          <caret line="9" selection-start-line="9" selection-end-line="9" />
           <folding>
             <element signature="e#0#15#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="588">
+          <caret line="154" selection-start-line="154" selection-end-line="154" />
+          <folding>
+            <element signature="e#0#9#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/geometery_utils.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="502">
-          <caret line="150" column="10" lean-forward="true" selection-start-line="150" selection-start-column="10" selection-end-line="150" selection-end-column="10" />
+        <state relative-caret-position="425">
+          <caret line="191" column="53" selection-start-line="191" selection-start-column="53" selection-end-line="191" selection-end-column="53" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
           </folding>

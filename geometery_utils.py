@@ -146,40 +146,57 @@ def merge(a, b):
             f_i.index(shared[1]),
         )
         return f[i:] + f[:i]
-    c = rotated(a) + rotated(b)[1:-1]
-    del a[:]
-    a += c
+    return rotated(a) + rotated(b)[1:-1]
+
+
+class FaceTracker:
+    def __init__(self):
+        self.faces = []
+        self.normals = []
+        self._point_keys_to_face = {}
+        self._point_keys_to_face_normal = {}
+
+    def add(self, face, face_normal):
+        self.faces.append(face)
+        self.normals.append(face_normal)
+        for e in adjacent_nlets(face, 2):
+            self._point_keys_to_face[self._keyify(e)] = face
+            self._point_keys_to_face_normal[self._keyify(e)] = face_normal
+
+    def remove(self, face):
+        if indexable(face) in indexable(self.faces):
+            i = indexable(self.faces).index(indexable(face))
+            del self.faces[i]
+            del self.normals[i]
+            for e in adjacent_nlets(face, 2):
+                try:
+                    del self._point_keys_to_face[self._keyify(e)]
+                    del self._point_keys_to_face_normal[self._keyify(e)]
+                except KeyError:
+                    pass
+
+    def get(self, point_pair):
+        return (self._point_keys_to_face[self._keyify(point_pair)],
+                self._point_keys_to_face_normal[self._keyify(point_pair)])
+
+    def _keyify(self, point_pair):
+        return frozenset(indexable(point_pair))
 
 
 def merge_coplanar_faces(faces, face_normals):
-    """Only strong IC's can read this."""
-    merged_faces = []
-    merged_normals = []
-    point_set_to_face = {}
-    point_set_to_face_normal = {}
+    """Only strong ICs can read this."""
+    tracker = FaceTracker()
     for face, norm in zip(map(list, faces), face_normals):
-        face_merged = False
-        point_sets = []
         for e in adjacent_nlets(face, 2):
-            point_set = frozenset(indexable(e))
-            point_sets.append(point_set)
             try:
-                face_mate = point_set_to_face[point_set]
-                norm_mate = point_set_to_face_normal[point_set]
-                if np.dot(normalized(norm), normalized(norm_mate)) == 1.0:
-                    face_merged = True
-                    merge(face_mate, face)
-                    # face was merged into it's mate
-                    face, norm = face_mate, norm_mate
-                    # edge no longer exists, remove it
-                    point_sets.remove(point_set)
-                    del point_set_to_face[point_set]
+                face_mate, norm_mate = tracker.get(e)
+                if np.isclose(np.dot(normalized(norm), normalized(norm_mate)), 1.0):
+                    merged = merge(face_mate, face)
+                    tracker.remove(face)
+                    tracker.remove(face_mate)
+                    face = merged
             except KeyError:
                 pass
-        for point_set in point_sets:
-            point_set_to_face[point_set] = face
-            point_set_to_face_normal[point_set] = norm
-        if not face_merged:
-            merged_faces.append(face)
-            merged_normals.append(norm)
-    return merged_faces, merged_normals
+        tracker.add(face, norm)
+    return tracker.faces, tracker.normals
+

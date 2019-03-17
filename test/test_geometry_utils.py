@@ -10,8 +10,7 @@ class TestGeometryUtils(unittest.TestCase):
         tri_a = [npa(0, 0), npa(1, 0), npa(1, 1)]
         tri_b = [npa(0, 1), npa(0, 0), npa(1, 1)]
         rect_a = [npa(0, 0), npa(1, 0), npa(1, 1), npa(0, 1)]
-        merge(tri_a, tri_b)
-        self.assert_shape_equals(tri_a, rect_a)
+        self.assert_shape_equals(merge(tri_a, tri_b), rect_a)
 
     def assert_shape_equals(self, actual, expected):
         actual, expected = indexable(actual), indexable(expected)
