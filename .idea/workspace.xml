@@ -2,11 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="713bade3-674c-47ee-a14a-34d50ff97be5" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/test/test_geometry_utils.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/geometery_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/geometery_utils.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/polygon.py" beforeDir="false" afterPath="$PROJECT_DIR$/polygon.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/renderer.py" beforeDir="false" afterPath="$PROJECT_DIR$/renderer.py" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -17,11 +16,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="560">
-              <caret line="82" column="39" lean-forward="true" selection-start-line="82" selection-start-column="39" selection-end-line="82" selection-end-column="39" />
+            <state relative-caret-position="646">
+              <caret line="154" selection-start-line="154" selection-end-line="154" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
@@ -29,13 +28,25 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/geometery_utils.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-256">
-              <caret line="126" lean-forward="true" selection-start-line="126" selection-end-line="126" />
+            <state relative-caret-position="502">
+              <caret line="150" column="10" lean-forward="true" selection-start-line="150" selection-start-column="10" selection-end-line="150" selection-end-column="10" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/test/test_geometry_utils.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="240">
+              <caret line="12" selection-start-line="12" selection-end-line="12" />
+              <folding>
+                <element signature="e#0#15#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -53,8 +64,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/renderer.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-2176">
-              <caret line="159" column="85" selection-start-line="159" selection-start-column="85" selection-end-line="159" selection-end-column="85" />
+            <state relative-caret-position="367">
+              <caret line="204" column="30" lean-forward="true" selection-start-line="204" selection-start-column="30" selection-end-line="204" selection-end-column="30" />
               <folding>
                 <element signature="e#0#33#0" expanded="true" />
               </folding>
@@ -143,9 +154,10 @@
         <option value="$PROJECT_DIR$/polyhedron.py" />
         <option value="$PROJECT_DIR$/test/geometry_utils_test.py" />
         <option value="$PROJECT_DIR$/renderer.py" />
-        <option value="$PROJECT_DIR$/geometery_utils.py" />
         <option value="$PROJECT_DIR$/polygon.py" />
         <option value="$PROJECT_DIR$/main.py" />
+        <option value="$PROJECT_DIR$/test/test_geometry_utils.py" />
+        <option value="$PROJECT_DIR$/geometery_utils.py" />
       </list>
     </option>
   </component>
@@ -176,7 +188,7 @@
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1552803428496" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1552855106073" />
     <property name="settings.editor.selected.configurable" value="editor.preferences.fonts.default" />
   </component>
   <component name="RunDashboard">
@@ -226,7 +238,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
-      <option name="PARAMETERS" value="meshes/concave1.stl --debug" />
+      <option name="PARAMETERS" value="meshes/octagon1.stl --debug" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -297,6 +309,20 @@
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
+    <configuration name="Unittests for test_geometry_utils.TestGeometryUtils.test_merge" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+      <module name="laser_mesh" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/test" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_geometry_utils.TestGeometryUtils.test_merge&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
     <list>
       <item itemvalue="Python.debug" />
       <item itemvalue="Python.debug individual" />
@@ -304,9 +330,11 @@
       <item itemvalue="Python tests.Unittests for geometry_utils_test.TestGeometryUtils" />
       <item itemvalue="Python tests.Unittests for geometry_utils_test.TestGeometryUtils.test_coordinateSystem2D_mirror_x" />
       <item itemvalue="Python tests.Unittests for geometry_utils_test.TestGeometryUtils.test_angle_between_three_points" />
+      <item itemvalue="Python tests.Unittests for test_geometry_utils.TestGeometryUtils.test_merge" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python tests.Unittests for test_geometry_utils.TestGeometryUtils.test_merge" />
         <item itemvalue="Python tests.Unittests for geometry_utils_test.TestGeometryUtils.test_angle_between_three_points" />
         <item itemvalue="Python tests.Unittests for geometry_utils_test.TestGeometryUtils" />
         <item itemvalue="Python tests.Unittests for geometry_utils_test.TestGeometryUtils.test_coordinateSystem2D_mirror_x" />
@@ -327,39 +355,40 @@
     <servers />
   </component>
   <component name="TestHistory">
-    <history-entry file="Unittests_for_geometry_utils_test_TestGeometryUtils - 2019.03.16 at 18h 34m 13s.xml">
-      <configuration name="Unittests for geometry_utils_test.TestGeometryUtils" configurationId="tests" />
+    <history-entry file="Unittests_for_test_geometry_utils_TestGeometryUtils_test_merge - 2019.03.17 at 11h 49m 01s.xml">
+      <configuration name="Unittests for test_geometry_utils.TestGeometryUtils.test_merge" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_for_geometry_utils_test_TestGeometryUtils - 2019.03.16 at 18h 37m 07s.xml">
-      <configuration name="Unittests for geometry_utils_test.TestGeometryUtils" configurationId="tests" />
+    <history-entry file="Unittests_for_test_geometry_utils_TestGeometryUtils_test_merge - 2019.03.17 at 11h 49m 13s.xml">
+      <configuration name="Unittests for test_geometry_utils.TestGeometryUtils.test_merge" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_for_geometry_utils_test_TestGeometryUtils_test_coordinateSystem2D_mirror_x - 2019.03.16 at 18h 38m 34s.xml">
-      <configuration name="Unittests for geometry_utils_test.TestGeometryUtils.test_coordinateSystem2D_mirror_x" configurationId="tests" />
+    <history-entry file="Unittests_for_test_geometry_utils_TestGeometryUtils_test_merge - 2019.03.17 at 11h 50m 02s.xml">
+      <configuration name="Unittests for test_geometry_utils.TestGeometryUtils.test_merge" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_for_geometry_utils_test_TestGeometryUtils - 2019.03.16 at 18h 39m 08s.xml">
-      <configuration name="Unittests for geometry_utils_test.TestGeometryUtils" configurationId="tests" />
+    <history-entry file="Unittests_for_test_geometry_utils_TestGeometryUtils_test_merge - 2019.03.17 at 11h 51m 14s.xml">
+      <configuration name="Unittests for test_geometry_utils.TestGeometryUtils.test_merge" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_for_geometry_utils_test_TestGeometryUtils - 2019.03.16 at 18h 39m 41s.xml">
-      <configuration name="Unittests for geometry_utils_test.TestGeometryUtils" configurationId="tests" />
+    <history-entry file="Unittests_for_test_geometry_utils_TestGeometryUtils_test_merge - 2019.03.17 at 11h 52m 00s.xml">
+      <configuration name="Unittests for test_geometry_utils.TestGeometryUtils.test_merge" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_for_geometry_utils_test_TestGeometryUtils_test_angle_between_three_points - 2019.03.16 at 18h 55m 44s.xml">
-      <configuration name="Unittests for geometry_utils_test.TestGeometryUtils.test_angle_between_three_points" configurationId="tests" />
+    <history-entry file="Unittests_for_test_geometry_utils_TestGeometryUtils_test_merge - 2019.03.17 at 13h 28m 02s.xml">
+      <configuration name="Unittests for test_geometry_utils.TestGeometryUtils.test_merge" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_for_geometry_utils_test_TestGeometryUtils_test_angle_between_three_points - 2019.03.16 at 18h 56m 06s.xml">
-      <configuration name="Unittests for geometry_utils_test.TestGeometryUtils.test_angle_between_three_points" configurationId="tests" />
+    <history-entry file="Unittests_for_test_geometry_utils_TestGeometryUtils_test_merge - 2019.03.17 at 13h 29m 29s.xml">
+      <configuration name="Unittests for test_geometry_utils.TestGeometryUtils.test_merge" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_for_geometry_utils_test_TestGeometryUtils_test_angle_between_three_points - 2019.03.16 at 18h 56m 51s.xml">
-      <configuration name="Unittests for geometry_utils_test.TestGeometryUtils.test_angle_between_three_points" configurationId="tests" />
+    <history-entry file="Unittests_for_test_geometry_utils_TestGeometryUtils_test_merge - 2019.03.17 at 13h 34m 38s.xml">
+      <configuration name="Unittests for test_geometry_utils.TestGeometryUtils.test_merge" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_for_geometry_utils_test_TestGeometryUtils_test_angle_between_three_points - 2019.03.16 at 18h 58m 56s.xml">
-      <configuration name="Unittests for geometry_utils_test.TestGeometryUtils.test_angle_between_three_points" configurationId="tests" />
+    <history-entry file="Unittests_for_test_geometry_utils_TestGeometryUtils_test_merge - 2019.03.17 at 13h 35m 24s.xml">
+      <configuration name="Unittests for test_geometry_utils.TestGeometryUtils.test_merge" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_for_geometry_utils_test_TestGeometryUtils_test_angle_between_three_points - 2019.03.16 at 19h 04m 21s.xml">
-      <configuration name="Unittests for geometry_utils_test.TestGeometryUtils.test_angle_between_three_points" configurationId="tests" />
+    <history-entry file="Unittests_for_test_geometry_utils_TestGeometryUtils_test_merge - 2019.03.17 at 13h 36m 48s.xml">
+      <configuration name="Unittests for test_geometry_utils.TestGeometryUtils.test_merge" configurationId="tests" />
     </history-entry>
   </component>
   <component name="ToolWindowManager">
-    <frame x="1091" y="0" width="1110" height="1201" extended-state="0" />
+    <frame x="1091" y="12" width="1110" height="1182" extended-state="0" />
+    <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" weight="0.2756654" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
@@ -370,12 +399,12 @@
       <window_info id="Favorites" order="6" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32683378" />
-      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.49714828" weight="0.22056074" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.26276696" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" sideWeight="0.49714828" visible="true" weight="0.22454806" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.26260704" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info active="true" anchor="bottom" id="Terminal" order="7" sideWeight="0.49714828" visible="true" weight="0.22803739" />
+      <window_info anchor="bottom" id="Terminal" order="7" sideWeight="0.49714828" weight="0.22740248" />
       <window_info anchor="bottom" id="Event Log" order="8" sideWeight="0.5028517" side_tool="true" weight="0.22897196" />
       <window_info anchor="bottom" id="Version Control" order="9" weight="0.32959852" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
@@ -392,47 +421,42 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/geometery_utils.py</url>
-          <line>140</line>
-          <option name="timeStamp" value="7" />
+          <url>file://$PROJECT_DIR$/test/test_geometry_utils.py</url>
+          <line>12</line>
+          <option name="timeStamp" value="16" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
-    <watches-manager>
-      <configuration name="PythonConfigurationType">
-        <watch expression="keep_merging" />
-      </configuration>
-    </watches-manager>
   </component>
   <component name="debuggerHistoryManager">
     <expressions id="evaluateExpression">
       <expression>
-        <expression-string>merged_faces</expression-string>
+        <expression-string>f[i:] + f[:i]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>len(merged_faces)</expression-string>
+        <expression-string>f[:2]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>len(faces)</expression-string>
+        <expression-string>f[2:]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>faces</expression-string>
+        <expression-string>i</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>rotated(a)</expression-string>
+        <expression-string>rotated(f)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>a, rotated(a)</expression-string>
+        <expression-string>f</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
@@ -442,12 +466,12 @@
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>c</expression-string>
+        <expression-string>rotated(a)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>merge_coplanar_faces(faces, face_normals)</expression-string>
+        <expression-string>merge(tri_a, tri_b)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
@@ -645,13 +669,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://C:/Anaconda2/Lib/unittest/case.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="264">
-          <caret line="524" column="8" selection-start-line="524" selection-start-column="8" selection-end-line="524" selection-end-column="8" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/test/geometry_utils_test.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="300">
@@ -669,30 +686,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/geometery_utils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-256">
-          <caret line="126" lean-forward="true" selection-start-line="126" selection-end-line="126" />
-          <folding>
-            <element signature="e#0#18#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/polygon.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-1122">
           <caret line="40" column="24" selection-start-line="40" selection-start-column="24" selection-end-line="40" selection-end-column="24" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/renderer.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-2176">
-          <caret line="159" column="85" selection-start-line="159" selection-start-column="85" selection-end-line="159" selection-end-column="85" />
-          <folding>
-            <element signature="e#0#33#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -703,12 +700,49 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/renderer.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="367">
+          <caret line="204" column="30" lean-forward="true" selection-start-line="204" selection-start-column="30" selection-end-line="204" selection-end-column="30" />
+          <folding>
+            <element signature="e#0#33#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/main.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="560">
-          <caret line="82" column="39" lean-forward="true" selection-start-line="82" selection-start-column="39" selection-end-line="82" selection-end-column="39" />
+        <state relative-caret-position="646">
+          <caret line="154" selection-start-line="154" selection-end-line="154" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/Anaconda2/Lib/unittest/case.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="262">
+          <caret line="329" selection-start-line="329" selection-end-line="329" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test/test_geometry_utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="240">
+          <caret line="12" selection-start-line="12" selection-end-line="12" />
+          <folding>
+            <element signature="e#0#15#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/geometery_utils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="502">
+          <caret line="150" column="10" lean-forward="true" selection-start-line="150" selection-start-column="10" selection-end-line="150" selection-end-column="10" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
           </folding>
         </state>
       </provider>

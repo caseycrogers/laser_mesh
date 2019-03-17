@@ -125,47 +125,61 @@ def adjacent_nlets(q, n):
     return zip(*[q[c:] + q[:c] for c in range(n)])
 
 
+def indexable(a):
+    try:
+        return tuple(indexable(v) for v in a)
+    except TypeError:
+        return a
+
+
+def merge(a, b):
+    shared = [p for p in indexable(b) if p in indexable(a)]
+    assert len(shared) == 2, "Shapes share {0} points, not 2".format(len(shared))
+
+    def rotated(f):
+        f_i = indexable(f)
+        if f_i[0] in shared and f_i[-1] in shared:
+            # shape is already rotated
+            return f
+        i = max(
+            f_i.index(shared[0]),
+            f_i.index(shared[1]),
+        )
+        return f[i:] + f[:i]
+    c = rotated(a) + rotated(b)[1:-1]
+    del a[:]
+    a += c
+
+
 def merge_coplanar_faces(faces, face_normals):
-    def indexable(a):
-        try:
-            return tuple(indexable(v) for v in a)
-        except TypeError:
-            return a
-
-    def merge(a, b, shared):
-        def rotated(f):
-            i = max(map(indexable, f).index(shared[0]), map(indexable, f).index(shared[1]))
-            return f[i:] + f[:i]
-        # only strong IC's can read this
-        c = rotated(a) + rotated(b)[1:-1]
-        del a[:]
-        a += c
-
-    keep_merging = True
+    """Only strong IC's can read this."""
     merged_faces = []
     merged_normals = []
-    while keep_merging:
-        point_tup_to_face = {}
-        point_tup_to_face_normal = {}
-        merged_faces = []
-        merged_normals = []
-        keep_merging = False
-        for face, norm in zip(map(list, faces), face_normals):
-            merged = False
-            for e in adjacent_nlets(face, 2):
-                point_set = frozenset(indexable(e))
-                try:
-                    face_mate = point_tup_to_face[point_set]
-                    norm_mate = point_tup_to_face_normal[point_set]
-                    if np.dot(normalized(norm), normalized(norm_mate)) == 1.0:
-                        merged = True
-                        keep_merging = True
-                        merge(face_mate, face, tuple(point_set))
-                except KeyError:
-                    point_tup_to_face[point_set] = face
-                    point_tup_to_face_normal[point_set] = norm
-            if not merged:
-                merged_faces.append(face)
-                merged_normals.append(norm)
-        faces, face_normals = merged_faces, merged_normals
+    point_set_to_face = {}
+    point_set_to_face_normal = {}
+    for face, norm in zip(map(list, faces), face_normals):
+        face_merged = False
+        point_sets = []
+        for e in adjacent_nlets(face, 2):
+            point_set = frozenset(indexable(e))
+            point_sets.append(point_set)
+            try:
+                face_mate = point_set_to_face[point_set]
+                norm_mate = point_set_to_face_normal[point_set]
+                if np.dot(normalized(norm), normalized(norm_mate)) == 1.0:
+                    face_merged = True
+                    merge(face_mate, face)
+                    # face was merged into it's mate
+                    face, norm = face_mate, norm_mate
+                    # edge no longer exists, remove it
+                    point_sets.remove(point_set)
+                    del point_set_to_face[point_set]
+            except KeyError:
+                pass
+        for point_set in point_sets:
+            point_set_to_face[point_set] = face
+            point_set_to_face_normal[point_set] = norm
+        if not face_merged:
+            merged_faces.append(face)
+            merged_normals.append(norm)
     return merged_faces, merged_normals

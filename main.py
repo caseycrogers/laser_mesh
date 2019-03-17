@@ -23,7 +23,7 @@ def main(mesh_file, output_name, merge, panels, debug, individual):
 
     src_mesh = mesh.Mesh.from_file(mesh_file)
 
-    tris = []
+    polys = []
     edge_to_edge_mate = {}
     edge_to_poly_mate = {}
     curr_index = 0
@@ -70,16 +70,21 @@ def main(mesh_file, output_name, merge, panels, debug, individual):
                 # edge has not already been visited, add it to the dictionaries
                 edge_to_edge_mate[edge.indexable()] = edge
                 edge_to_poly_mate[edge.indexable()] = poly
-        tris.append(poly)
+        polys.append(poly)
 
     edge_lengths = set()
     [edge_lengths.update([distance(v[0], v[1]), distance(v[1], v[2]), distance(v[2], v[0])]) for v in src_mesh.vectors]
-    print 'Outputting {0} triangles with a min edge of {1} and a max edge of {2}'.format(
-        len(src_mesh.vectors), min(edge_lengths), max(edge_lengths)
+    print('================================')
+    print 'Outputting:\npolys: {0} \nmax edges: {1}\nmax edge length: {2}\nmin edge length: {3}'.format(
+        len(polys),
+        max([len(p.edges) for p in polys]),
+        max(edge_lengths),
+        min(edge_lengths),
     )
+    print('================================')
 
     if individual:
-        for i, poly in enumerate(tris):
+        for i, poly in enumerate(polys):
             r = renderer(panels=panels)
             r.add_polygon(poly)
             indices = [e.index for e in poly.edges]
@@ -93,7 +98,7 @@ def main(mesh_file, output_name, merge, panels, debug, individual):
                                rotation=False)
             rid_to_packing_box = {}
             i = 0
-            for poly in tris:
+            for poly in polys:
                 r = PackingBoxRenderer()
                 r.add_polygon(poly)
                 box = r.finish('')
