@@ -184,7 +184,6 @@ class FaceTracker:
 
 
 def merge_coplanar_faces(faces, face_normals):
-    """Only strong ICs can read this."""
     tracker = FaceTracker()
     for face, norm in zip(map(list, faces), face_normals):
         for e in adjacent_nlets(face, 2):
