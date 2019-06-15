@@ -1,7 +1,7 @@
 class Config(object):
     font_file = '1CamBam_Stick_1.ttf'
 
-    bed_width = 300
+    bed_width = 305
     bed_height = 200
 
     padding = 2

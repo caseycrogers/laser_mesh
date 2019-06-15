@@ -95,7 +95,7 @@ class _MatPlotLibRenderer:
                       offset_polygon_2d(adjusted_points,
                                         len(adjusted_points)*[Config.joint_depth + Config.min_thickness])]
             if np.dot(adjusted_points[1] - adjusted_points[0], cutout[1] - cutout[0]) < 0:
-                print 'polygon too small for cutout!'
+                print('polygon too small for cutout!')
                 return
             for line in adjacent_nlets(cutout, 2):
                 self.add_line(line[0], line[1])
@@ -170,7 +170,7 @@ class _MatPlotLibRenderer:
                 biased_point = a_orig + cs.right(distance(a_orig, b_orig) * get_joint_bias())
                 joint_center = nearest_point_on_line(a, b, biased_point)
                 if distance(a, joint_center) + notch_width / 2.0 > distance(a, b):
-                    print 'Joint is falling off the end of the edge.'
+                    print('Joint is falling off the end of the edge.')
                 p1 = a
                 p2 = joint_center + cs.left(notch_width / 2.0)
                 self.add_line(p1, p2, tab=Config.attachment_tab)
@@ -220,8 +220,8 @@ class _MatPlotLibRenderer:
                     render_panel_text()
 
                 if width < Config.min_edge_width:
-                    print 'side with length {0} is shorter than minimum length {1}'.format(
-                        width, Config.min_edge_width)
+                    print('side with length {0} is shorter than minimum length {1}'.format(
+                        width, Config.min_edge_width))
 
 
 class DXFRenderer(_MatPlotLibRenderer):

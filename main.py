@@ -17,7 +17,7 @@ def main(mesh_file, output_name, merge, panels, debug, individual):
     else:
         renderer = DXFRenderer
         if os.path.exists(output_name):
-            print 'output directory ({0}) already exists.'.format(output_name)
+            print('output directory ({0}) already exists.'.format(output_name))
             sys.exit(1)
         os.mkdir(output_name)
 
@@ -75,12 +75,12 @@ def main(mesh_file, output_name, merge, panels, debug, individual):
     edge_lengths = set()
     [edge_lengths.update([distance(v[0], v[1]), distance(v[1], v[2]), distance(v[2], v[0])]) for v in src_mesh.vectors]
     print('================================')
-    print 'Outputting:\npolys: {0} \nmax edges: {1}\nmax edge length: {2}\nmin edge length: {3}'.format(
+    print('Outputting:\npolys: {0} \nmax edges: {1}\nmax edge length: {2}\nmin edge length: {3}'.format(
         len(polys),
         max([len(p.edges) for p in polys]),
         max(edge_lengths),
         min(edge_lengths),
-    )
+    ))
     print('================================')
 
     if individual:
