@@ -94,9 +94,8 @@ class _MatPlotLibRenderer:
             cutout = [p + translation for p in
                       offset_polygon_2d(adjusted_points,
                                         len(adjusted_points)*[Config.joint_depth + Config.min_thickness])]
-            if np.dot(adjusted_points[1] - adjusted_points[0], cutout[1] - cutout[0]) < 0:
-                print('polygon too small for cutout!')
-                return
+            if not cutout:
+                print("Shape too small for cutout!")
             for line in adjacent_nlets(cutout, 2):
                 self.add_line(line[0], line[1])
 

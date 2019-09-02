@@ -88,6 +88,22 @@ def angle_between_faces(a, b, v, u):
         return 2*np.pi - angle
 
 
+def intersect(edge_a, edge_b):
+    a1, a2, b1, b2 = edge_a[0], edge_a[1], edge_b[0], edge_b[1]
+    def perp(a):
+        b = np.empty_like(a)
+        b[0] = -a[1]
+        b[1] = a[0]
+        return b
+    da = a2-a1
+    db = b2-b1
+    dp = a1-b1
+    dap = perp(da)
+    denom = np.dot(dap, db)
+    num = np.dot(dap, dp)
+    return (num / denom.astype(float))*db + b1
+
+
 def is_convex(a, b, v):
     return np.dot(a - b, v) > 0
 
@@ -118,7 +134,21 @@ def offset_polygon_2d(points, offsets):
         adjusted[b_i] += offsets[b_i] * normalized(a - b) / np.sin(cba)
         dcb = angle_between_three_points_2d(d, c, b)
         adjusted[c_i] += offsets[b_i] * normalized(d - c) / np.sin(dcb)
-    return adjusted
+
+    uninverted=[]
+    for edge_pair in zip(adjacent_nlets(adjusted, 2), adjacent_nlets(points, 2)):
+        first_inverted_edge = None
+        a, b = edge_pair
+        if np.dot(a[1] - a[0], b[1] - b[0]) >= 0:
+            if first_inverted_edge:
+                uninverted.append(intersect(first_inverted_edge, a))
+                first_inverted_edge = None
+            else:
+                uninverted.append(a[0])
+            continue
+        if not first_inverted_edge:
+            first_inverted_edge = a
+    return uninverted
 
 
 def adjacent_nlets(q, n):
