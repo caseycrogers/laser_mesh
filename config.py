@@ -10,7 +10,7 @@ class Config(object):
     t = .11  # compensate for the laser's kerf
     attachment_tab = .2  # Amount by which to under cut a line to leave the piece partially attached
 
-    nail_hole_diameter = .5
+    nail_hole_diameter = .4
 
     joint_depth = mat_thickness
     min_thickness = mat_thickness

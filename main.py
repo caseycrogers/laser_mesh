@@ -11,7 +11,7 @@ import argparse
 import sys
 
 
-def main(mesh_file, output_name, merge, panels, debug, individual):
+def main(mesh_file, output_name, merge, panels, debug, individual, display_packing_boxes):
     if debug:
         renderer = DebugRenderer
     else:
@@ -131,6 +131,13 @@ def main(mesh_file, output_name, merge, panels, debug, individual):
             for rect in b:
                 orig_box = rid_to_packing_box[rect.rid]
                 delta = np.array([float(rect.x), float(rect.y)]) - orig_box.bottom_left
+                if display_packing_boxes:
+                    box_points = [
+                        [rect.x, rect.y], [rect.x + rect.width, rect.y], [rect.x + rect.width, rect.y + rect.height],
+                        [rect.x, rect.y + rect.height]
+                    ]
+                    for a, b in adjacent_nlets(box_points, 2):
+                        r.add_line(a, b, color=DEBUG)
                 r.add_polygon(orig_box.triangle, translation=delta)
                 r.update()
 
@@ -146,10 +153,12 @@ if __name__ == "__main__":
     parser.add_argument('--debug', action='store_true', help='Only render in matplotlib.')
     parser.add_argument('--no_panels', action='store_true', help='Don\'t render panels.')
     parser.add_argument('--individual', action='store_true', help='Render each triangle individually.')
+    parser.add_argument('--display_packing_boxes', action='store_true', help='Showing packing boxes.')
     args = parser.parse_args()
     main(args.mesh_file,
          args.mesh_file.replace("/", "\\").split("\\")[-1].split(".")[0],
          not args.no_merge,
          not args.no_panels,
          args.debug,
-         args.individual)
+         args.individual,
+         args.display_packing_boxes)

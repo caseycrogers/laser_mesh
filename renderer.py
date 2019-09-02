@@ -103,7 +103,10 @@ class _MatPlotLibRenderer:
             cutout = [p + translation for p in
                       offset_polygon_2d(adjusted_points,
                                         len(adjusted_points)*[(Config.joint_depth + Config.min_thickness)/2.0])]
-            for point in cutout:
+            for point, trip in zip(cutout[1:] + cutout[:1], adjacent_nlets(cutout, 3)):
+                if (distance(trip[0], trip[1]) < 1.5*Config.min_thickness and
+                        distance(trip[1], trip[2]) < 1.5*Config.min_thickness):
+                    continue
                 self.add_circle(point, Config.nail_hole_diameter)
                 self.add_circle(point, Config.nail_hole_diameter + .4, color=CUT_THIN)
 
@@ -219,7 +222,7 @@ class _MatPlotLibRenderer:
                     render_panel_text()
 
                 if width < Config.min_edge_width:
-                    print('side with length {0} is shorter than minimum length {1}'.format(
+                    print('Side with length {0} is shorter than minimum length {1}'.format(
                         width, Config.min_edge_width))
 
 
@@ -263,18 +266,17 @@ class PackingBoxRenderer(_MatPlotLibRenderer):
         _MatPlotLibRenderer.__init__(self, panels=panels)
         self._ax = None
         # garbage comparable minimum and maximum values
-        self._x_min = sys.float_info.max
-        self._x_max = sys.float_info.min
-        self._y_min = sys.float_info.max
-        self._y_max = sys.float_info.min
+        self._x_min, self._x_max, self._y_min, self._y_max = None, None, None, None
         self._polygon = None
 
-    def add_polygon(self, polygon, translation=None):
-        _MatPlotLibRenderer.add_polygon(self, polygon)
+    def add_polygon(self, polygon, translation=np.array([0, 0])):
+        _MatPlotLibRenderer.add_polygon(self, polygon, translation)
         assert self._polygon is None, 'PackingBoxRenderer should only ever be called with one polygon.'
         self._polygon = polygon
 
     def add_line(self, a, b, color=CUT_THICK, tab=0.0):
+        if not self._x_min:
+            self._x_min, self._x_max, self._y_min, self._y_max = a[0], a[0], a[1], a[1]
         for x in (a[0], b[0]):
             self._x_min = min(self._x_min, x)
             self._x_max = max(self._x_max, x)
