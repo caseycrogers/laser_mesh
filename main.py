@@ -88,7 +88,7 @@ def main(mesh_file, output_name, merge, panels, debug, individual, display_packi
             r = renderer(panels=panels)
             r.add_polygon(poly)
             indices = [e.index for e in poly.edges]
-            r.finish('{0}\\{0}-tri{1}-{2}_{3}_{4}'.format(output_name, i, *indices))
+            r.finish('{0}/{0}-tri{1}-{2}_{3}_{4}'.format(output_name, i, *indices))
     else:
         best_packer = None
         for pack_algo in [maxrects.MaxRectsBl, maxrects.MaxRectsBaf, skyline.SkylineMwf, skyline.SkylineBl]:
@@ -143,7 +143,7 @@ def main(mesh_file, output_name, merge, panels, debug, individual, display_packi
 
                 min_edge_index = min(min_edge_index, *[e.index for e in orig_box.triangle.edges])
                 max_edge_index = max(max_edge_index, *[e.index for e in orig_box.triangle.edges])
-            r.finish('{0}\\{0}-bed{1}_{2}_{3}'.format(output_name, i, min_edge_index, max_edge_index))
+            r.finish('{0}/{0}-bed{1}_{2}_{3}'.format(output_name, i, min_edge_index, max_edge_index))
 
 
 if __name__ == "__main__":
@@ -156,7 +156,7 @@ if __name__ == "__main__":
     parser.add_argument('--display_packing_boxes', action='store_true', help='Showing packing boxes.')
     args = parser.parse_args()
     main(args.mesh_file,
-         args.mesh_file.replace("/", "\\").split("\\")[-1].split(".")[0],
+         args.mesh_file.split("/")[-1].split(".")[0],
          not args.no_merge,
          not args.no_panels,
          args.debug,

@@ -7,6 +7,8 @@ from matplotlib import patches
 from config import Config
 import sys
 
+import numpy as np
+
 from geometery_utils import *
 from packing_box import PackingBox
 
@@ -90,10 +92,12 @@ class _MatPlotLibRenderer:
             return offset_polygon_2d(points_2d, offsets)
         adjusted_points = _get_adjusted_points(polygon)
 
+        cutout_width = Config.joint_depth + Config.min_thickness
+
         def render_cutout():
             cutout = [p + translation for p in
                       offset_polygon_2d(adjusted_points,
-                                        len(adjusted_points)*[Config.joint_depth + Config.min_thickness])]
+                                        len(adjusted_points)*[cutout_width])]
             if not cutout:
                 print("Shape too small for cutout!")
             for line in adjacent_nlets(cutout, 2):
@@ -111,7 +115,8 @@ class _MatPlotLibRenderer:
                 self.add_circle(point, Config.nail_hole_diameter + .4, color=CUT_THIN)
 
         render_cutout()
-        render_holes()
+        if self._render_panels:
+            render_holes()
 
         for i, edge in enumerate(polygon.edges):
             # convert to 2D coordinate space
@@ -129,30 +134,98 @@ class _MatPlotLibRenderer:
             def render_joint(joint_point):
                 # reduce angles from 0 - 360 to 0 - 180 for simplicity
                 joint_angle = edge.get_edge_angle if not edge.is_concave else 2 * np.pi - edge.get_edge_angle
-                joint_width = Config.mat_thickness + 2*Config.t
-                joint_depth = Config.joint_depth + 2*Config.t
+                joint_width = Config.mat_thickness - 2*Config.t
+                joint_depth = Config.joint_depth - 2*Config.t
 
                 rot_cs = cs.rotated_copy(np.pi / 2.0 - joint_angle)
-                long_edge = joint_depth + joint_width / np.tan(joint_angle / 2.0)
 
-                p1 = joint_point
-                p2 = p1 + cs.down(long_edge)
-                self.add_line(p1, p2)
+                def render_snap_joint():
+                    snap_size = .25*Config.mat_thickness
+                    long_edge = snap_size + cutout_width + (1.5*joint_width) / np.tan(joint_angle / 2.0)
+                    short_edge = snap_size + cutout_width - (.5*joint_width) / np.tan(joint_angle / 2.0)
 
-                p3 = p2 + rot_cs.right(long_edge)
-                self.add_line(p2, p3)
-                p4 = p3 + rot_cs.up(joint_width)
-                self.add_line(p3, p4)
-                p5 = p4 + rot_cs.left(joint_depth)
-                self.add_line(p4, p5)
+                    # add index text
+                    self.add_text(joint_point + cs.right(joint_width) + cs.down(Config.text_offset + cutout_width - joint_depth),
+                                  -1*cs.y_vector, str(edge.index),
+                                  long_edge - (cutout_width - joint_depth) - Config.text_offset,
+                                  joint_width)
 
-                p6 = p5 + cs.up(joint_depth)
-                self.add_line(p5, p6)
-                self.add_text(p5, p2 - p5, str(edge.index), distance(p2, p5) - Config.text_offset, joint_width,
-                              v_center=True)
-                p7 = p6 + cs.left(joint_width)
-                self.add_line(p6, p7, tab=Config.attachment_tab)
-                return p6
+                    # long edges
+                    p1 = joint_point + cs.right(joint_width / 2.0)
+                    p2 = p1 + cs.down(long_edge)
+                    self.add_line(p1, p2, tab=Config.attachment_tab)
+                    p3 = p2 + rot_cs.right(long_edge)
+                    self.add_line(p2, p3, tab=Config.attachment_tab)
+
+                    # snap 1
+                    p4 = p3 + rot_cs.up(.5*joint_width)
+                    self.add_line(p3, p4)
+                    p5 = p4 + rot_cs.up(snap_size) + rot_cs.left(snap_size)
+                    self.add_line(p4, p5)
+                    p6 = p5 + rot_cs.down(snap_size)
+                    self.add_line(p5, p6)
+                    p7 = p6 + rot_cs.left(cutout_width - joint_depth)
+                    self.add_line(p6, p7)
+                    p8 = p7 + rot_cs.up(joint_width)
+                    self.add_line(p7, p8)
+                    p9 = p8 + rot_cs.right(cutout_width - joint_depth)
+                    self.add_line(p8, p9)
+
+                    # snap 2
+                    p10 = p9 + rot_cs.down(snap_size)
+                    self.add_line(p9, p10)
+                    p11 = p10 + rot_cs.up(snap_size) + rot_cs.right(snap_size)
+                    self.add_line(p10, p11)
+                    p12 = p11 + rot_cs.up(.5*joint_width)
+                    self.add_line(p11, p12)
+
+                    # short edges
+                    p13 = p12 + rot_cs.left(short_edge)
+                    self.add_line(p12, p13)
+                    p14 = p13 + cs.up(short_edge)
+                    self.add_line(p13, p14)
+                    p15 = p14 + cs.left(.5*joint_width)
+
+                    # snap 3
+                    p16 = p15 + cs.left(snap_size) + cs.down(snap_size)
+                    self.add_line(p15, p16)
+                    p17 = p16 + cs.right(snap_size)
+                    self.add_line(p16, p17)
+                    p18 = p17 + cs.down(cutout_width - joint_depth)
+                    self.add_line(p17, p18)
+                    p19 = p18 + cs.left(joint_width)
+                    self.add_line(p18, p19)
+
+                    # snap 4
+                    p20 = p19 + cs.up(cutout_width - joint_depth)
+                    self.add_line(p19, p20)
+                    p21 = p20 + cs.right(snap_size)
+                    self.add_line(p20, p21)
+                    p22 = p21 + cs.left(snap_size) + cs.up(snap_size)
+                    self.add_line(p21, p22)
+
+                def render_glue_joint():
+                    long_edge = joint_depth + joint_width / np.tan(joint_angle / 2.0)
+
+                    p1 = joint_point
+                    p2 = p1 + cs.down(long_edge)
+                    self.add_line(p1, p2)
+
+                    p3 = p2 + rot_cs.right(long_edge)
+                    self.add_line(p2, p3)
+                    p4 = p3 + rot_cs.up(joint_width)
+                    self.add_line(p3, p4)
+                    p5 = p4 + rot_cs.left(joint_depth)
+                    self.add_line(p4, p5)
+
+                    p6 = p5 + cs.up(joint_depth)
+                    self.add_line(p5, p6)
+                    self.add_text(p5, p2 - p5, str(edge.index), distance(p2, p5) - Config.text_offset, joint_width,
+                                  v_center=True)
+                    p7 = p6 + cs.left(joint_width)
+                    self.add_line(p6, p7, tab=Config.attachment_tab)
+
+                render_snap_joint()
 
             def get_joint_bias():
                 def bias(theta):
@@ -183,9 +256,10 @@ class _MatPlotLibRenderer:
                 p5 = p4 + cs.down(Config.joint_depth)
                 self.add_line(p4, p5)
 
-                p6 = render_joint(p5) if edge.is_male else p5
-                p7 = b
-                self.add_line(p6, p7)
+                if edge.is_male:
+                    render_joint(p5)
+                p6 = b
+                self.add_line(p5, p6)
 
             def render_text():
                 text_point = mid + cs.right(Config.mat_thickness / 2.0 + Config.text_offset) + \
@@ -240,8 +314,8 @@ class DXFRenderer(_MatPlotLibRenderer):
 
     def finish(self, name):
         if self._axis_range is not None:
-            x_bound = map(mm_to_inch, self._ax.get_xbound())
-            y_bound = map(mm_to_inch, self._ax.get_ybound())
+            x_bound = list(map(mm_to_inch, self._ax.get_xbound()))
+            y_bound = list(map(mm_to_inch, self._ax.get_ybound()))
             plt.gcf().set_size_inches(x_bound[1] - x_bound[0], y_bound[1] - y_bound[0])
         plt.gcf().savefig('{0}.svg'.format(name, format='svg'), bbox_inches=0, pad_inches=0, transparent=True)
         plt.clf()

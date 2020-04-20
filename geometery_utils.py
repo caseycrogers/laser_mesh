@@ -5,27 +5,27 @@ from itertools import chain
 
 class CoordinateSystem2D(object):
     def __init__(self, x_vector, y_vector):
-        self._x_vector = x_vector
-        self._y_vector = y_vector
+        self.x_vector = x_vector
+        self.y_vector = y_vector
 
     def up(self, delta):
-        return self._y_vector*delta
+        return self.y_vector * delta
 
     def down(self, delta):
-        return -self._y_vector*delta
+        return -self.y_vector * delta
 
     def left(self, delta):
-        return -self._x_vector*delta
+        return -self.x_vector * delta
 
     def right(self, delta):
-        return self._x_vector*delta
+        return self.x_vector * delta
 
     def mirror_x(self, a, mirror_point):
-        return a + self.right(2 * np.dot(mirror_point - a, self._x_vector))
+        return a + self.right(2 * np.dot(mirror_point - a, self.x_vector))
 
     def rotated_copy(self, theta):
-        return CoordinateSystem2D(rotate_cc_around_origin_2d(self._x_vector, theta),
-                                  rotate_cc_around_origin_2d(self._y_vector, theta))
+        return CoordinateSystem2D(rotate_cc_around_origin_2d(self.x_vector, theta),
+                                  rotate_cc_around_origin_2d(self.y_vector, theta))
 
 
 def midpoint(a, b):
