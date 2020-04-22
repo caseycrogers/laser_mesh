@@ -3,8 +3,7 @@ from rectpack import float2dec
 
 
 class PackingBox(object):
-    def __init__(self, triangle, x_min, x_max, y_min, y_max):
-        self.triangle = triangle
+    def __init__(self, x_min, x_max, y_min, y_max):
         self.bottom_left = np.array([x_min, y_min])
         self.width = x_max - x_min
         self.height = y_max - y_min

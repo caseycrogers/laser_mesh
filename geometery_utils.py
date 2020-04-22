@@ -23,9 +23,15 @@ class CoordinateSystem2D(object):
     def mirror_x(self, a, mirror_point):
         return a + self.right(2 * np.dot(mirror_point - a, self.x_vector))
 
-    def rotated_copy(self, theta):
+    def rotated(self, theta):
         return CoordinateSystem2D(rotate_cc_around_origin_2d(self.x_vector, theta),
                                   rotate_cc_around_origin_2d(self.y_vector, theta))
+
+    def flipped_x(self):
+        return CoordinateSystem2D(-self.x_vector, self.y_vector)
+
+    def flipped_y(self):
+        return CoordinateSystem2D(self.x_vector, -self.y_vector)
 
 
 def midpoint(a, b):
@@ -118,6 +124,14 @@ def unit_vector_from_points(a, b):
 
 def mm_to_inch(mm):
     return 0.0393701*mm
+
+
+def get_adjusted_points(polygon, t):
+    points_2d = [polygon.flatten_point(p)[0:2] for p in polygon.points]
+    offsets = [find_joint_offset(t, e.get_edge_angle)
+               if not e.is_open else 0.0
+               for e in polygon.edges]
+    return offset_polygon_2d(points_2d, offsets)
 
 
 def find_joint_offset(t, theta):

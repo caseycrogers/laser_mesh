@@ -5,13 +5,15 @@ from renderer import *
 from geometery_utils import *
 from rectpack import PackingMode, PackingBin, newPacker, float2dec
 from rectpack import maxrects, skyline
+from render_polygon import render_polygon
 
 import argparse
+import numpy as np
 
 import sys
 
 
-def main(mesh_file, output_name, merge, panels, debug, individual, display_packing_boxes):
+def main(mesh_file, output_name, merge, render_panels, debug, individual, display_packing_boxes):
     if debug:
         renderer = DebugRenderer
     else:
@@ -34,12 +36,12 @@ def main(mesh_file, output_name, merge, panels, debug, individual, display_packi
 
     for face, face_normal in zip(faces, face_normals):
         unit_norm = normalized(face_normal)
-        poly = Polygon(
+        orig_poly = Polygon(
             face_normal,
             [Edge(b, c, angle_between_three_points(c, b, a, unit_norm), angle_between_three_points(d, c, b, unit_norm))
              for a, b, c, d in adjacent_nlets(face, 4)]
         )
-        for edge in poly.edges:
+        for edge in orig_poly.edges:
             try:
                 # find the edge mate if present
                 edge.index = curr_index
@@ -47,13 +49,17 @@ def main(mesh_file, output_name, merge, panels, debug, individual, display_packi
                 poly_mate = edge_to_poly_mate[edge.indexable()]
 
                 # find the two vertices not shared by the two polygons, needed to help determine concavity
-                disjoint_vert = [p for p in poly.points
+                disjoint_vert = [p for p in orig_poly.points
                                  if not point_equals(p, edge.point_a)
                                  and not point_equals(p, edge.point_b)][0]
                 disjoint_vert_mate = [p for p in poly_mate.points
                                       if not point_equals(p, edge.point_a)
                                       and not point_equals(p, edge.point_b)][0]
-                edge_angle = angle_between_faces(disjoint_vert, disjoint_vert_mate, poly.unit_norm, poly_mate.unit_norm)
+                if np.dot(orig_poly.unit_norm, poly_mate.unit_norm) >= 0:
+                    edge_angle = angle_between_faces(disjoint_vert, disjoint_vert_mate, orig_poly.unit_norm, poly_mate.unit_norm)
+                else:
+                    edge_angle = angle_between_faces(disjoint_vert, disjoint_vert_mate, orig_poly.unit_norm, -1*poly_mate.unit_norm)
+
 
                 # set concave edges to female to try to avoid collisions
                 target_type = Edge.female if edge.angle_a > np.pi or edge.angle_b > np.pi else Edge.male
@@ -69,8 +75,8 @@ def main(mesh_file, output_name, merge, panels, debug, individual, display_packi
             except KeyError:
                 # edge has not already been visited, add it to the dictionaries
                 edge_to_edge_mate[edge.indexable()] = edge
-                edge_to_poly_mate[edge.indexable()] = poly
-        polys.append(poly)
+                edge_to_poly_mate[edge.indexable()] = orig_poly
+        polys.append(orig_poly)
 
     edge_lengths = set()
     [edge_lengths.update([distance(v[0], v[1]), distance(v[1], v[2]), distance(v[2], v[0])]) for v in src_mesh.vectors]
@@ -84,10 +90,10 @@ def main(mesh_file, output_name, merge, panels, debug, individual, display_packi
     print('================================')
 
     if individual:
-        for i, poly in enumerate(polys):
-            r = renderer(panels=panels)
-            r.add_polygon(poly)
-            indices = [e.index for e in poly.edges]
+        for i, orig_poly in enumerate(polys):
+            r = renderer()
+            render_polygon(r, orig_poly, render_panels)
+            indices = [e.index for e in orig_poly.edges]
             r.finish('{0}/{0}-tri{1}-{2}_{3}_{4}'.format(output_name, i, *indices))
     else:
         best_packer = None
@@ -96,13 +102,15 @@ def main(mesh_file, output_name, merge, panels, debug, individual, display_packi
                                pack_algo=pack_algo,
                                bin_algo=PackingBin.BFF,
                                rotation=False)
-            rid_to_packing_box = {}
+            rid_to_box = {}
+            rid_to_poly = {}
             i = 0
-            for poly in polys:
+            for orig_poly in polys:
                 r = PackingBoxRenderer()
-                r.add_polygon(poly)
+                render_polygon(r, orig_poly, render_panels)
                 box = r.finish('')
-                rid_to_packing_box[i] = box
+                rid_to_box[i] = box
+                rid_to_poly[i] = orig_poly
                 packer.add_rect(*box.rect, rid=i)
                 i += 1
             packer.add_bin(float2dec(Config.bed_width, 2), float2dec(Config.bed_height, 2), count=float('inf'))
@@ -115,7 +123,7 @@ def main(mesh_file, output_name, merge, panels, debug, individual, display_packi
         frame_width = Config.bed_width - 2 * (Config.padding - Config.t)
         frame_height = Config.bed_height - 2 * (Config.padding - Config.t)
         for i, b in enumerate(packer):
-            r = renderer(panels=panels, axis_range=np.array([Config.bed_width, Config.bed_height]))
+            r = renderer(panels=render_panels, axis_range=np.array([Config.bed_width, Config.bed_height]))
             # draw positioning frame
             f0 = np.array([Config.padding - Config.t, Config.padding - Config.t])
             f1 = f0 + frame_width * right
@@ -129,7 +137,8 @@ def main(mesh_file, output_name, merge, panels, debug, individual, display_packi
             min_edge_index = float('inf')
             max_edge_index = float('-inf')
             for rect in b:
-                orig_box = rid_to_packing_box[rect.rid]
+                orig_box = rid_to_box[rect.rid]
+                orig_poly = rid_to_poly[rect.rid]
                 delta = np.array([float(rect.x), float(rect.y)]) - orig_box.bottom_left
                 if display_packing_boxes:
                     box_points = [
@@ -138,11 +147,11 @@ def main(mesh_file, output_name, merge, panels, debug, individual, display_packi
                     ]
                     for a, b in adjacent_nlets(box_points, 2):
                         r.add_line(a, b, color=DEBUG)
-                r.add_polygon(orig_box.triangle, translation=delta)
+                render_polygon(r, orig_poly, render_panels, translation=delta)
                 r.update()
 
-                min_edge_index = min(min_edge_index, *[e.index for e in orig_box.triangle.edges])
-                max_edge_index = max(max_edge_index, *[e.index for e in orig_box.triangle.edges])
+                min_edge_index = min(min_edge_index, *[e.index for e in orig_poly.edges])
+                max_edge_index = max(max_edge_index, *[e.index for e in orig_poly.edges])
             r.finish('{0}/{0}-bed{1}_{2}_{3}'.format(output_name, i, min_edge_index, max_edge_index))
 
 

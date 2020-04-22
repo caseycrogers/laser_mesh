@@ -5,29 +5,12 @@ from matplotlib.text import TextPath
 from matplotlib.font_manager import FontProperties
 from matplotlib import patches
 from config import Config
-import sys
 
 import numpy as np
 
+from color import *
 from geometery_utils import *
 from packing_box import PackingBox
-
-
-class Color:
-    def __init__(self, r, g, b, description):
-        self.description = description
-        self.r, self.g, self.b = r, g, b
-
-    def __hash__(self):
-        return hash((self.r, self.g, self.b, self.description))
-
-
-CUT_THICK = Color(0, 0, 255, "CUT_THICK")
-CUT_THIN = Color(255, 0, 0, "CUT_THIN")
-ENGRAVE_THICK = Color(0, 128, 0, "ENGRAVE_THICK")
-ENGRAVE_THIN = Color(255, 165, 0, "ENGRAVE_THIN")
-FRAME = Color(128, 128, 128, "FRAME")
-DEBUG = Color(0, 0, 0, "DEBUG")
 
 
 class _MatPlotLibRenderer:
@@ -36,10 +19,10 @@ class _MatPlotLibRenderer:
         self._ax = plt.subplot(111)
         self._colors = set()
         self._axis_range = axis_range
+        self._curr_draw_point = None
         if axis_range is not None:
             self._ax.set_xlim(left=0, right=axis_range[0])
             self._ax.set_ylim(bottom=0, top=axis_range[1])
-        self._render_panels = panels
 
     @staticmethod
     def _convert_color(color):
@@ -53,6 +36,28 @@ class _MatPlotLibRenderer:
             return self.add_line(mid + tab/2.0*normalized(mid - a), b, color=color)
         self._colors.add(color)
         self._ax.plot([a[0], b[0]], [a[1], b[1]], color=self._convert_color(color))
+
+    def get_draw_point(self):
+        return self._curr_draw_point
+
+    def set_draw_point(self, point):
+        self._curr_draw_point = point
+
+    def draw_to(self, b, color=CUT_THICK, tab=0.0):
+        if self._curr_draw_point is None:
+            raise ValueError("Draw point must be set before calling draw() or draw_to().")
+        prev, self._curr_draw_point = self._curr_draw_point, b
+        self.add_line(prev, self._curr_draw_point, color=color, tab=tab)
+        return self._curr_draw_point
+
+    def draw(self, translation, color=CUT_THICK, tab=0.0):
+        return self.draw_to(self._curr_draw_point + translation, color=color, tab=tab)
+
+    def move(self, translation):
+        if self._curr_draw_point is None:
+            raise ValueError("Draw point must be set before calling move().")
+        self._curr_draw_point += translation
+        return self._curr_draw_point
 
     def add_circle(self, a, d, color=CUT_THICK):
         self._colors.add(color)
@@ -82,222 +87,6 @@ class _MatPlotLibRenderer:
                 .translate(a[0], a[1])
         )
         self._ax.add_patch(patches.PathPatch(text_path, facecolor='none', edgecolor=self._convert_color(color)))
-
-    def add_polygon(self, polygon, translation=np.array([0, 0])):
-        def _get_adjusted_points(polygon):
-            points_2d = [polygon.flatten_point(p)[0:2] for p in polygon.points]
-            offsets = [find_joint_offset(Config.mat_thickness, e.get_edge_angle)
-                       if not e.is_open else 0.0
-                       for e in polygon.edges]
-            return offset_polygon_2d(points_2d, offsets)
-        adjusted_points = _get_adjusted_points(polygon)
-
-        cutout_width = Config.joint_depth + Config.min_thickness
-
-        def render_cutout():
-            cutout = [p + translation for p in
-                      offset_polygon_2d(adjusted_points,
-                                        len(adjusted_points)*[cutout_width])]
-            if not cutout:
-                print("Shape too small for cutout!")
-            for line in adjacent_nlets(cutout, 2):
-                self.add_line(line[0], line[1])
-
-        def render_holes():
-            cutout = [p + translation for p in
-                      offset_polygon_2d(adjusted_points,
-                                        len(adjusted_points)*[(Config.joint_depth + Config.min_thickness)/2.0])]
-            for point, trip in zip(cutout[1:] + cutout[:1], adjacent_nlets(cutout, 3)):
-                if (distance(trip[0], trip[1]) < 1.5*Config.min_thickness and
-                        distance(trip[1], trip[2]) < 1.5*Config.min_thickness):
-                    continue
-                self.add_circle(point, Config.nail_hole_diameter)
-                self.add_circle(point, Config.nail_hole_diameter + .4, color=CUT_THIN)
-
-        render_cutout()
-        if self._render_panels:
-            render_holes()
-
-        for i, edge in enumerate(polygon.edges):
-            # convert to 2D coordinate space
-            a_orig = polygon.flatten_point(edge.point_a)[0:2] + translation
-            b_orig = polygon.flatten_point(edge.point_b)[0:2] + translation
-            # we need to offset edges at convex joints to account for material thickness
-            a = adjusted_points[i] + translation
-            b = adjusted_points[(i + 1) % len(adjusted_points)] + translation
-            mid = midpoint(a, b)
-            width = distance(a, b)
-
-            cs = CoordinateSystem2D(normalized(b - a), normal(b, a))
-            mirrored = lambda p: cs.mirror_x(p, mid)
-
-            def render_joint(joint_point):
-                # reduce angles from 0 - 360 to 0 - 180 for simplicity
-                joint_angle = edge.get_edge_angle if not edge.is_concave else 2 * np.pi - edge.get_edge_angle
-                joint_width = Config.mat_thickness - 2*Config.t
-                joint_depth = Config.joint_depth - 2*Config.t
-
-                rot_cs = cs.rotated_copy(np.pi / 2.0 - joint_angle)
-
-                def render_snap_joint():
-                    snap_size = .25*Config.mat_thickness
-                    long_edge = snap_size + cutout_width + (1.5*joint_width) / np.tan(joint_angle / 2.0)
-                    short_edge = snap_size + cutout_width - (.5*joint_width) / np.tan(joint_angle / 2.0)
-
-                    # add index text
-                    self.add_text(joint_point + cs.right(joint_width) + cs.down(Config.text_offset + cutout_width - joint_depth),
-                                  -1*cs.y_vector, str(edge.index),
-                                  long_edge - (cutout_width - joint_depth) - Config.text_offset,
-                                  joint_width)
-
-                    # long edges
-                    p1 = joint_point + cs.right(joint_width / 2.0)
-                    p2 = p1 + cs.down(long_edge)
-                    self.add_line(p1, p2, tab=Config.attachment_tab)
-                    p3 = p2 + rot_cs.right(long_edge)
-                    self.add_line(p2, p3, tab=Config.attachment_tab)
-
-                    # snap 1
-                    p4 = p3 + rot_cs.up(.5*joint_width)
-                    self.add_line(p3, p4)
-                    p5 = p4 + rot_cs.up(snap_size) + rot_cs.left(snap_size)
-                    self.add_line(p4, p5)
-                    p6 = p5 + rot_cs.down(snap_size)
-                    self.add_line(p5, p6)
-                    p7 = p6 + rot_cs.left(cutout_width - joint_depth)
-                    self.add_line(p6, p7)
-                    p8 = p7 + rot_cs.up(joint_width)
-                    self.add_line(p7, p8)
-                    p9 = p8 + rot_cs.right(cutout_width - joint_depth)
-                    self.add_line(p8, p9)
-
-                    # snap 2
-                    p10 = p9 + rot_cs.down(snap_size)
-                    self.add_line(p9, p10)
-                    p11 = p10 + rot_cs.up(snap_size) + rot_cs.right(snap_size)
-                    self.add_line(p10, p11)
-                    p12 = p11 + rot_cs.up(.5*joint_width)
-                    self.add_line(p11, p12)
-
-                    # short edges
-                    p13 = p12 + rot_cs.left(short_edge)
-                    self.add_line(p12, p13)
-                    p14 = p13 + cs.up(short_edge)
-                    self.add_line(p13, p14)
-                    p15 = p14 + cs.left(.5*joint_width)
-
-                    # snap 3
-                    p16 = p15 + cs.left(snap_size) + cs.down(snap_size)
-                    self.add_line(p15, p16)
-                    p17 = p16 + cs.right(snap_size)
-                    self.add_line(p16, p17)
-                    p18 = p17 + cs.down(cutout_width - joint_depth)
-                    self.add_line(p17, p18)
-                    p19 = p18 + cs.left(joint_width)
-                    self.add_line(p18, p19)
-
-                    # snap 4
-                    p20 = p19 + cs.up(cutout_width - joint_depth)
-                    self.add_line(p19, p20)
-                    p21 = p20 + cs.right(snap_size)
-                    self.add_line(p20, p21)
-                    p22 = p21 + cs.left(snap_size) + cs.up(snap_size)
-                    self.add_line(p21, p22)
-
-                def render_glue_joint():
-                    long_edge = joint_depth + joint_width / np.tan(joint_angle / 2.0)
-
-                    p1 = joint_point
-                    p2 = p1 + cs.down(long_edge)
-                    self.add_line(p1, p2)
-
-                    p3 = p2 + rot_cs.right(long_edge)
-                    self.add_line(p2, p3)
-                    p4 = p3 + rot_cs.up(joint_width)
-                    self.add_line(p3, p4)
-                    p5 = p4 + rot_cs.left(joint_depth)
-                    self.add_line(p4, p5)
-
-                    p6 = p5 + cs.up(joint_depth)
-                    self.add_line(p5, p6)
-                    self.add_text(p5, p2 - p5, str(edge.index), distance(p2, p5) - Config.text_offset, joint_width,
-                                  v_center=True)
-                    p7 = p6 + cs.left(joint_width)
-                    self.add_line(p6, p7, tab=Config.attachment_tab)
-
-                render_snap_joint()
-
-            def get_joint_bias():
-                def bias(theta):
-                    # place joint nearer to obtuse angles, further from acute ones
-                    return 1 - min(theta / np.pi, 1)
-                mate = edge.get_edge_mate
-                # invert the ratios for the angles on the right relative to this edge
-                bias_from_left = np.average([bias(edge.angle_a), 1 - bias(edge.angle_b),
-                                             1 - bias(mate.angle_a), bias(mate.angle_b)])
-                return bias_from_left
-
-            def render_edge():
-                notch_width = Config.mat_thickness - 2*Config.t
-                # joint center needs to be positioned respective to the original side otherwise
-                # mating joins will not line up properly depending on their respective offsets
-                # pick the joint point biased towards the centers of the offset polygon edges
-                biased_point = a_orig + cs.right(distance(a_orig, b_orig) * get_joint_bias())
-                joint_center = nearest_point_on_line(a, b, biased_point)
-                if distance(a, joint_center) + notch_width / 2.0 > distance(a, b):
-                    print('Joint is falling off the end of the edge.')
-                p1 = a
-                p2 = joint_center + cs.left(notch_width / 2.0)
-                self.add_line(p1, p2, tab=Config.attachment_tab)
-                p3 = p2 + cs.up(Config.joint_depth)
-                self.add_line(p2, p3)
-                p4 = p3 + cs.right(notch_width)
-                self.add_line(p3, p4)
-                p5 = p4 + cs.down(Config.joint_depth)
-                self.add_line(p4, p5)
-
-                if edge.is_male:
-                    render_joint(p5)
-                p6 = b
-                self.add_line(p5, p6)
-
-            def render_text():
-                text_point = mid + cs.right(Config.mat_thickness / 2.0 + Config.text_offset) + \
-                             cs.up(Config.text_offset)
-                self.add_text(text_point, b - a,
-                              str(edge.index) + ('c' if edge.is_concave else ''),
-                              distance(b, text_point) - Config.text_offset, Config.text_height - 2*Config.text_offset)
-
-            def render_panel_edge():
-                self.add_line(a_orig, b_orig, color=CUT_THIN, tab=2*Config.attachment_tab)
-
-            def render_panel_guide():
-                self.add_line(a + cs.left(1), a + cs.right(1), color=ENGRAVE_THIN)
-                self.add_line(b + cs.left(1), b + cs.right(1), color=ENGRAVE_THIN)
-
-            def render_panel_text():
-                text_point = midpoint(a_orig, b_orig) + cs.up(Config.text_offset)
-                self.add_text(text_point, b_orig - a_orig,
-                              str(edge.index),
-                              distance(b, text_point) - Config.text_offset, Config.text_height, ENGRAVE_THIN,
-                              h_center=True)
-
-            if self._render_panels:
-                # render panel edge whether or not the edge is open
-                render_panel_edge()
-                render_panel_guide()
-            if edge.is_open:
-                # Don't add anything to an open edge
-                self.add_line(a, b)
-            else:
-                render_edge()
-                render_text()
-                if self._render_panels:
-                    render_panel_text()
-
-                if width < Config.min_edge_width:
-                    print('Side with length {0} is shorter than minimum length {1}'.format(
-                        width, Config.min_edge_width))
 
 
 class DXFRenderer(_MatPlotLibRenderer):
@@ -336,17 +125,11 @@ class DebugRenderer(_MatPlotLibRenderer):
 
 
 class PackingBoxRenderer(_MatPlotLibRenderer):
-    def __init__(self, panels=True, ):
+    def __init__(self, panels=True):
         _MatPlotLibRenderer.__init__(self, panels=panels)
         self._ax = None
         # garbage comparable minimum and maximum values
         self._x_min, self._x_max, self._y_min, self._y_max = None, None, None, None
-        self._polygon = None
-
-    def add_polygon(self, polygon, translation=np.array([0, 0])):
-        _MatPlotLibRenderer.add_polygon(self, polygon, translation)
-        assert self._polygon is None, 'PackingBoxRenderer should only ever be called with one polygon.'
-        self._polygon = polygon
 
     def add_line(self, a, b, color=CUT_THICK, tab=0.0):
         if not self._x_min:
@@ -368,8 +151,7 @@ class PackingBoxRenderer(_MatPlotLibRenderer):
         pass
 
     def finish(self, name):
-        return PackingBox(self._polygon,
-                          self._x_min - Config.padding,
+        return PackingBox(self._x_min - Config.padding,
                           self._x_max + Config.padding,
                           self._y_min - Config.padding,
                           self._y_max + Config.padding)

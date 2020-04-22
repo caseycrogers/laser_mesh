@@ -14,6 +14,7 @@ class Config(object):
 
     joint_depth = mat_thickness
     min_thickness = mat_thickness
+    snap_size = .25*mat_thickness
 
     text_offset = .75
     text_height = joint_depth + min_thickness
