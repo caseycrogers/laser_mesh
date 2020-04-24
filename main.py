@@ -39,7 +39,7 @@ def main(mesh_file, output_name, merge, render_panels, debug, individual, displa
         orig_poly = Polygon(
             face_normal,
             [Edge(b, c, angle_between_three_points(c, b, a, unit_norm), angle_between_three_points(d, c, b, unit_norm))
-             for a, b, c, d in adjacent_nlets(face, 4)]
+             for a, b, c, d in adjacent_nlets(list(reversed(face)), 4)]
         )
         for edge in orig_poly.edges:
             try:
@@ -101,7 +101,7 @@ def main(mesh_file, output_name, merge, render_panels, debug, individual, displa
             packer = newPacker(mode=PackingMode.Offline,
                                pack_algo=pack_algo,
                                bin_algo=PackingBin.BFF,
-                               rotation=False)
+                               rotation=True)
             rid_to_box = {}
             rid_to_poly = {}
             i = 0
@@ -118,28 +118,24 @@ def main(mesh_file, output_name, merge, render_panels, debug, individual, displa
             if best_packer is None or len(packer.bin_list()) < len(best_packer.bin_list()):
                 best_packer = packer
 
-        right = np.array([1, 0])
-        up = np.array([0, 1])
         frame_width = Config.bed_width - 2 * (Config.padding - Config.t)
         frame_height = Config.bed_height - 2 * (Config.padding - Config.t)
         for i, b in enumerate(packer):
             r = renderer(panels=render_panels, axis_range=np.array([Config.bed_width, Config.bed_height]))
             # draw positioning frame
-            f0 = np.array([Config.padding - Config.t, Config.padding - Config.t])
-            f1 = f0 + frame_width * right
-            r.add_line(f0, f1, color=FRAME)
-            f2 = f1 + frame_height * up
-            r.add_line(f1, f2, color=FRAME)
-            f3 = f2 - frame_width * right
-            r.add_line(f2, f3, color=FRAME)
-            r.add_line(f3, f0, color=FRAME)
+            r.add_rectangle(np.array([0, 0]), frame_width, frame_height)
 
             min_edge_index = float('inf')
             max_edge_index = float('-inf')
             for rect in b:
                 orig_box = rid_to_box[rect.rid]
                 orig_poly = rid_to_poly[rect.rid]
-                delta = np.array([float(rect.x), float(rect.y)]) - orig_box.bottom_left
+                if rect.width != orig_box.rect[0]:
+                    rot = np.pi/2
+                else:
+                    rot = 0.0
+                delta = np.array([float(rect.x), float(rect.y)]) - rotate_cc_around_origin_2d(
+                    orig_box.top_right if rot else orig_box.bottom_left, rot)
                 if display_packing_boxes:
                     box_points = [
                         [rect.x, rect.y], [rect.x + rect.width, rect.y], [rect.x + rect.width, rect.y + rect.height],
@@ -147,7 +143,7 @@ def main(mesh_file, output_name, merge, render_panels, debug, individual, displa
                     ]
                     for a, b in adjacent_nlets(box_points, 2):
                         r.add_line(a, b, color=DEBUG)
-                render_polygon(r, orig_poly, render_panels, translation=delta)
+                render_polygon(r, orig_poly, render_panels, translation=delta, rotation=rot)
                 r.update()
 
                 min_edge_index = min(min_edge_index, *[e.index for e in orig_poly.edges])

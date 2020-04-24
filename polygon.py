@@ -7,8 +7,10 @@ class Polygon(object):
         self.adj_unit_norms = []
 
         self.unit_norm = face_normal / np.linalg.norm(face_normal)
-        # Use the vector defined by the first edge as the x axis
-        self.x_prime = unit_vector_from_points(edges[0].point_b, edges[0].point_a)
+        # Use the vector defined by the largest edge as the x axis to maximize packing efficiency
+        # (long flat rectangles seem to pack easier)
+        best_edge = sorted(edges, key=lambda e: -e.length)[0]
+        self.x_prime = unit_vector_from_points(best_edge.point_b, best_edge.point_a)
         self.y_prime = np.cross(self.unit_norm, self.x_prime)
 
         basis_matrix = np.row_stack((self.x_prime, self.y_prime, self.unit_norm))

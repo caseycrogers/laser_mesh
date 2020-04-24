@@ -63,6 +63,14 @@ class _MatPlotLibRenderer:
         self._colors.add(color)
         self._ax.add_patch(patches.Circle(a, d/2.0, color=self._convert_color(color)))
 
+    def add_rectangle(self, a, width, height):
+        cs = CoordinateSystem2D(np.array([1, 0]), np.array([0, 1]))
+        self.set_draw_point(a)
+        self.draw(cs.right(width), color=FRAME)
+        self.draw(cs.up(height), color=FRAME)
+        self.draw(cs.left(width), color=FRAME)
+        self.draw(cs.down(height), color=FRAME)
+
     def add_text(self, a, v, text, max_w, max_h, color=ENGRAVE_THICK, h_center=False, v_center=False):
         self._colors.add(color)
         text_path = TextPath([0, 0], text, font_properties=FontProperties(fname=Config.font_file))

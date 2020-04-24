@@ -4,7 +4,7 @@ class Config(object):
     bed_width = 305
     bed_height = 200
 
-    padding = 2
+    padding = .5
 
     mat_thickness = 3.06  # eighth inch ply
     t = .11  # compensate for the laser's kerf
@@ -12,12 +12,12 @@ class Config(object):
 
     nail_hole_diameter = .4
 
-    joint_depth = mat_thickness
+    notch_depth = mat_thickness
     min_thickness = mat_thickness
     snap_size = .25*mat_thickness
 
     text_offset = .75
-    text_height = joint_depth + min_thickness
+    text_height = notch_depth + min_thickness
 
-    min_edge_width = joint_depth + mat_thickness
+    min_edge_width = notch_depth + mat_thickness
 
